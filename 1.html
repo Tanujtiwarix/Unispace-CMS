@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unispace Faculty Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { 
+            background: linear-gradient(135deg, #fce4ec 0%, #e3f2fd 100%); 
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+        /* Page sections are hidden by default */
+        .page-section { display: none; }
+        /* Active section is displayed */
+        .page-section.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+
+        .sidebar-link.active {
+            background-color: #ebf4ff;
+            color: #1a73e8;
+            font-weight: 600;
+            border-right: 4px solid #1a73e8;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body class="p-6">
+
+    <div class="flex max-w-7xl mx-auto h-[90vh] bg-white/60 backdrop-blur-md rounded-[2rem] shadow-2xl overflow-hidden border border-white/40">
+        
+        <aside class="w-64 bg-white/40 border-r border-white/20 flex flex-col p-6">
+            <div class="flex items-center space-x-3 mb-10">
+                <div class="bg-blue-600 p-2 rounded-xl">
+                    <i class="fas fa-university text-white text-xl"></i>
+                </div>
+                <h1 class="font-bold text-gray-800 text-xl tracking-tight">Unispace</h1>
+            </div>
+
+            <nav class="flex-1 space-y-2">
+                <button onclick="showPage('dashboard', this)" class="sidebar-link active w-full flex items-center space-x-3 p-3 rounded-lg text-gray-600 transition">
+                    <i class="fas fa-th-large"></i> <span>Dashboard</span>
+                </button>
+                <button onclick="showPage('attendance', this)" class="sidebar-link w-full flex items-center space-x-3 p-3 rounded-lg text-gray-600 transition">
+                    <i class="fas fa-user-check"></i> <span>Mark Attendance</span>
+                </button>
+                <button onclick="showPage('announcements', this)" class="sidebar-link w-full flex items-center space-x-3 p-3 rounded-lg text-gray-600 transition">
+                    <i class="fas fa-bullhorn"></i> <span>Announcements</span>
+                </button>
+                <button onclick="showPage('booking', this)" class="sidebar-link w-full flex items-center space-x-3 p-3 rounded-lg text-gray-600 transition">
+                    <i class="fas fa-door-open"></i> <span>Classroom Booking</span>
+                </button>
+                <button onclick="showPage('timetable', this)" class="sidebar-link w-full flex items-center space-x-3 p-3 rounded-lg text-gray-600 transition">
+                    <i class="fas fa-calendar-alt"></i> <span>My Schedule</span>
+                </button>
+            </nav>
+
+            <div class="pt-6 border-t border-white/20">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">RK</div>
+                    <div class="text-xs">
+                        <p class="font-bold text-gray-800">Prof. Ramesh Kumar</p>
+                        <p class="text-gray-400">CSE Department</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="flex-1 overflow-y-auto p-10">
+
+            <section id="dashboard" class="page-section active">
+                <header class="flex justify-between items-center mb-8">
+                    <div>
+                        <h2 class="text-3xl font-bold text-blue-900">Good Evening, Professor!</h2>
+                        <p class="text-gray-500">Friday, April 3, 2026</p>
+                    </div>
+                </header>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-white">
+                        <p class="text-gray-400 text-xs font-bold uppercase tracking-wider">Attendance Pending</p>
+                        <h3 class="text-2xl font-bold text-red-500 mt-1">2 Classes</h3>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-white">
+                        <p class="text-gray-400 text-xs font-bold uppercase tracking-wider">Today's Lectures</p>
+                        <h3 class="text-2xl font-bold text-blue-900 mt-1">4 Total</h3>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-white">
+                        <p class="text-gray-400 text-xs font-bold uppercase tracking-wider">Active Bookings</p>
+                        <h3 class="text-2xl font-bold text-green-600 mt-1">Lab D-102</h3>
+                    </div>
+                </div>
+            </section>
+
+            <section id="attendance" class="page-section">
+                <h2 class="text-2xl font-bold text-blue-900 mb-6">Mark Attendance</h2>
+                <div class="bg-white p-6 rounded-3xl border border-white shadow-sm">
+                    <p class="text-gray-500 mb-4">Select section to mark attendance for today's class.</p>
+                    <table class="w-full text-left">
+                        <tr class="border-b">
+                            <td class="py-4">2026CS101 - Aarav Sharma</td>
+                            <td class="py-4 text-right">
+                                <button onclick="this.innerText= (this.innerText==='PRESENT'?'ABSENT':'PRESENT'); this.classList.toggle('bg-red-100'); this.classList.toggle('text-red-600');" class="px-4 py-1 bg-green-100 text-green-600 rounded-lg font-bold text-xs">PRESENT</button>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </section>
+
+            <section id="announcements" class="page-section">
+                <h2 class="text-2xl font-bold text-blue-900 mb-6">Announcements</h2>
+                <div class="bg-white p-6 rounded-3xl border border-white shadow-sm">
+                    <textarea class="w-full bg-gray-50 p-4 rounded-xl border outline-none" placeholder="Write announcement..."></textarea>
+                    <button onclick="alert('Announcement Posted!')" class="mt-4 bg-blue-600 text-white px-6 py-2 rounded-xl font-bold">Post Now</button>
+                </div>
+            </section>
+
+            <section id="booking" class="page-section">
+                <h2 class="text-2xl font-bold text-blue-900 mb-6">Classroom Booking</h2>
+                <div class="bg-white p-6 rounded-3xl border border-white shadow-sm">
+                    <p>Seminar Hall A - <span class="text-green-600 font-bold">Available</span></p>
+                </div>
+            </section>
+
+            <section id="timetable" class="page-section">
+                <h2 class="text-2xl font-bold text-blue-900 mb-6">My Schedule</h2>
+                <div class="bg-white p-6 rounded-3xl border border-white shadow-sm">
+                    <div class="p-4 bg-blue-50 rounded-xl mb-2">
+                        <p class="font-bold">09:00 AM - Maths (D101)</p>
+                    </div>
+                    <div class="p-4 bg-pink-50 rounded-xl">
+                        <p class="font-bold">11:00 AM - Python (D204)</p>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        function showPage(pageId, btn) {
+            // Saare sections hide karo
+            const sections = document.querySelectorAll('.page-section');
+            sections.forEach(s => s.classList.remove('active'));
+
+            // Target section dikhao
+            document.getElementById(pageId).classList.add('active');
+
+            // Sidebar links active state change karo
+            const links = document.querySelectorAll('.sidebar-link');
+            links.forEach(l => l.classList.remove('active'));
+            btn.classList.add('active');
+        }
+    </script>
+
+</body>
+</html>

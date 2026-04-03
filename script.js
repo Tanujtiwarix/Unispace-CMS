@@ -119,3 +119,54 @@ function navigate(view, btn) {
 window.onload = () => {
     document.getElementById('page-content').innerHTML = pageData.dashboard;
 };
+
+// Sample Data
+const attendanceData = [
+    { id: 1, name: "Computational Mathematics", code: "MATH101", attended: 18, total: 28 },
+    { id: 2, name: "Object Oriented Programming", code: "CSE201", attended: 25, total: 30 },
+    { id: 3, name: "Data Structures", code: "CSE202", attended: 22, total: 24 }
+];
+
+function updateDashboard() {
+    const container = document.getElementById('subject-container');
+    let grandAttended = 0;
+    let grandTotal = 0;
+
+    container.innerHTML = ""; // Clear list
+
+    attendanceData.forEach(sub => {
+        const perc = Math.round((sub.attended / sub.total) * 100);
+        grandAttended += sub.attended;
+        grandTotal += sub.total;
+
+        container.innerHTML += `
+            <div class="subject-card">
+                <div>
+                    <strong>${sub.name}</strong> <small>${sub.code}</small>
+                    <div style="font-size: 0.8em; color: gray;">${sub.attended}/${sub.total} classes</div>
+                </div>
+                <div style="text-align: right">
+                    <span style="color: ${perc < 75 ? 'red' : 'green'}">${perc}%</span>
+                    <button onclick="logClass(${sub.id})">+</button>
+                </div>
+            </div>
+        `;
+    });
+
+    // Update Top Summary
+    document.getElementById('total-attended').innerText = grandAttended;
+    document.getElementById('total-classes').innerText = grandTotal;
+    document.getElementById('total-missed').innerText = grandTotal - grandAttended;
+    document.getElementById('overall-perc').innerText = Math.round((grandAttended / grandTotal) * 100) + "%";
+}
+
+// Function to simulate marking a class as attended
+function logClass(id) {
+    const subject = attendanceData.find(s => s.id === id);
+    subject.attended++;
+    subject.total++;
+    updateDashboard();
+}
+
+// Initialize
+updateDashboard();
