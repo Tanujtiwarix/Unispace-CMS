@@ -1,61 +1,42 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Unispace | Dashboard</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+  <title>Login</title>
 </head>
-
 <body>
 
-    <div class="app-container">
-        <aside class="sidebar">
-            <div class="brand">
-                <div class="logo-box"><i class="ri-government-fill"></i></div>
-                <div class="brand-info">
-                    <strong>Unispace</strong>
-                    <span>Classroom Manager</span>
-                </div>
-            </div>
-            <nav class="nav-menu">
-                <div class="nav-item active" onclick="navigate('dashboard', this)"><i class="ri-layout-grid-fill"></i>
-                    Dashboard</div>
-                <div class="nav-item" onclick="navigate('attendance', this)"><i class="ri-checkbox-circle-line"></i>
-                    Attendance</div>
-                <div class="nav-item" onclick="navigate('timetable', this)"><i class="ri-calendar-event-line"></i>
-                    Timetable</div>
-                <div class="nav-item" onclick="navigate('map', this)"><i class="ri-map-2-line"></i> Map</div>
-                <div class="nav-item" onclick="navigate('classrooms', this)"><i class="ri-door-open-line"></i>
-                    Classrooms</div>
-            </nav>
-            <div class="sidebar-footer">
-                <div class="user-pill">
-                    <div class="user-img"><i class="ri-user-line"></i></div>
-                    <span>Student</span>
-                    <i class="ri-logout-box-r-line logout-btn"></i>
-                </div>
-            </div>
-        </aside>
+<h2>Login Page</h2>
 
-        <main class="main-content">
-            <header class="page-header">
-                <h1 id="dynamic-greeting">Loading...</h1>
-                <p class="header-subtext">
-                    <span id="live-date"></span> •
-                    <span id="live-clock"></span> •
-                    <span>B.Tech CSE 1st Year</span>
-                </p>
-            </header>
+<input id="id" placeholder="User ID"><br><br>
+<input id="password" type="password" placeholder="Password"><br><br>
 
-            <div id="page-content">
-            </div>
-        </main>
-    </div>
+<button onclick="login()">Login</button>
 
-    <script src="script.js"></script>
+<p id="result"></p>
+
+<script>
+async function login() {
+  const id = document.getElementById('id').value
+  const password = document.getElementById('password').value
+
+  const res = await fetch('https://legendary-space-sniffle-wrqv9jq9gjq5c595x-3000.app.github.dev/login', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ id, password })
+  })
+
+  const data = await res.json()
+
+  if (data.success) {
+    // 👉 redirect after login
+    window.location.href = "2.html"
+  } else {
+    document.getElementById('result').innerText = "Invalid Credentials ❌"
+  }
+}
+</script>
+
 </body>
-
-</html> 
+</html>
