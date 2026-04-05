@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unispace | Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --navy: #1e3a8a;
+            --bg: #f8fafc;
+            --border: #e2e8f0;
+            --green: #22c55e;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: var(--bg); color: #334155; height: 100vh; overflow: hidden; }
+
+        .app-container { display: flex; height: 100vh; }
+
+        /* Navigation Logic (The "No-JS" Switch) */
+        input[type="radio"] { display: none; }
+        .page-section { display: none; }
+
+        #tab-dash:checked ~ .main-content #view-dashboard,
+        #tab-att:checked ~ .main-content #view-attendance,
+        #tab-time:checked ~ .main-content #view-timetable,
+        #tab-map:checked ~ .main-content #view-map,
+        #tab-rooms:checked ~ .main-content #view-classrooms {
+            display: block;
+        }
+
+        /* Sidebar Styling */
+        .sidebar { width: 260px; background: #fff; border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+        .brand { padding: 25px; display: flex; align-items: center; gap: 12px; }
+        .logo-box { background: var(--primary); color: #fff; padding: 8px; border-radius: 8px; font-size: 20px; }
+        .brand-info strong { display: block; font-size: 18px; color: #1e293b; }
+        .brand-info span { font-size: 11px; color: #64748b; font-weight: 500; }
+
+        .nav-menu { flex: 1; padding: 10px; }
+        .nav-item { 
+            padding: 12px 16px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 12px; 
+            color: #475569; font-weight: 500; margin-bottom: 5px; transition: 0.2s;
+        }
+        .nav-item:hover { background: #f1f5f9; color: var(--primary); }
+        
+        /* Active State via CSS */
+        #tab-dash:checked ~ .sidebar .nav-dash,
+        #tab-att:checked ~ .sidebar .nav-att,
+        #tab-time:checked ~ .sidebar .nav-time,
+        #tab-map:checked ~ .sidebar .nav-map,
+        #tab-rooms:checked ~ .sidebar .nav-rooms {
+            background: #f1f5f9; color: var(--primary); font-weight: 700;
+        }
+
+        .sidebar-footer { padding: 20px; border-top: 1px solid var(--border); }
+        .user-pill { display: flex; align-items: center; gap: 10px; background: #f8fafc; padding: 10px; border-radius: 12px; border: 1px solid var(--border); }
+        .user-img { width: 30px; height: 30px; background: #cbd5e1; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; }
+
+        /* Main Content */
+        .main-content { flex: 1; padding: 40px; overflow-y: auto; }
+        .page-header h1 { color: var(--primary); font-size: 32px; margin-bottom: 5px; }
+        .header-subtext { color: #64748b; font-size: 14px; margin-bottom: 30px; font-weight: 500; }
+        #live-clock { color: var(--navy); font-weight: 700; }
+
+        /* Dashboard Grid */
+        .dashboard-grid { display: grid; grid-template-columns: 1.6fr 1.2fr; gap: 25px; }
+        .card { background: #fff; border: 1px solid var(--border); border-radius: 20px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 20px;}
+        .card-header { font-weight: 700; color: var(--navy); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-size: 18px; }
+
+        .att-box { background: #f0fdf4; border-radius: 15px; padding: 20px; text-align: center; margin-bottom: 20px; border: 1px solid #dcfce7; }
+        .att-val { font-size: 36px; font-weight: 800; color: var(--green); }
+
+        .prog-row { margin-bottom: 15px; }
+        .prog-labels { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; font-weight: 600; }
+        .prog-bg { background: #e2e8f0; height: 8px; border-radius: 10px; }
+        .prog-fill { height: 100%; border-radius: 10px; background: var(--primary); }
+
+        /* Classroom Grid */
+        .room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .room-card { border: 1px solid #dcfce7; background: #fff; padding: 20px; border-radius: 16px; border-top: 5px solid var(--green); border-left: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+        .btn-book { width: 100%; background: var(--primary); color: #fff; border: none; padding: 12px; border-radius: 10px; margin-top: 15px; cursor: pointer; font-weight: 600; }
+    </style>
+</head>
+
+<body>
+
+    <div class="app-container">
+        <input type="radio" name="nav" id="tab-dash" checked>
+        <input type="radio" name="nav" id="tab-att">
+        <input type="radio" name="nav" id="tab-time">
+        <input type="radio" name="nav" id="tab-map">
+        <input type="radio" name="nav" id="tab-rooms">
+
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="logo-box"><i class="ri-government-fill"></i></div>
+                <div class="brand-info">
+                    <strong>Unispace</strong>
+                    <span>Classroom Manager</span>
+                </div>
+            </div>
+            <nav class="nav-menu">
+                <label for="tab-dash" class="nav-item nav-dash"><i class="ri-layout-grid-fill"></i> Dashboard</label>
+                <label for="tab-att" class="nav-item nav-att"><i class="ri-checkbox-circle-line"></i> Attendance</label>
+                <label for="tab-time" class="nav-item nav-time"><i class="ri-calendar-event-line"></i> Timetable</label>
+                <label for="tab-map" class="nav-item nav-map"><i class="ri-map-2-line"></i> Map</label>
+                <label for="tab-rooms" class="nav-item nav-rooms"><i class="ri-door-open-line"></i> Classrooms</label>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-pill">
+                    <div class="user-img"><i class="ri-user-line"></i></div>
+                    <span>Student</span>
+                    <i class="ri-logout-box-r-line logout-btn" style="margin-left:auto; cursor:pointer"></i>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="page-header">
+                <h1 id="dynamic-greeting">Good Day, Student!</h1>
+                <p class="header-subtext">
+                    <span id="live-date">...</span> •
+                    <span id="live-clock">...</span> •
+                    <span>B.Tech CSE 1st Year</span>
+                </p>
+            </header>
+
+            <section id="view-dashboard" class="page-section">
+                <div class="dashboard-grid">
+                    <div class="left-col">
+                        <div class="card">
+                            <div class="card-header"><i class="ri-calendar-todo-line"></i> Today's Schedule</div>
+                            <div style="height:180px; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; border:2px dashed #e2e8f0; border-radius:15px;">
+                                <i class="ri-book-open-line" style="font-size:40px; margin-bottom:10px"></i>
+                                <p>No classes scheduled for today.</p>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header"><i class="ri-megaphone-line"></i> Announcements</div>
+                            <div style="padding-bottom:10px; border-bottom:1px solid #f1f5f9; margin-bottom:10px">
+                                <strong style="font-size:14px">Semester End Exam Dates</strong>
+                                <p style="font-size:12px; color:gray">Schedule released for B.Tech CSE 1st Year.</p>
+                            </div>
+                            <div>
+                                <strong style="font-size:14px">Industrial Visit</strong>
+                                <p style="font-size:12px; color:gray">TCS Visit confirmed for next Friday.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="right-col">
+                        <div class="card">
+                            <div class="card-header"><i class="ri-line-chart-line"></i> Attendance Summary</div>
+                            <div class="att-box">
+                                <div class="att-val">79%</div>
+                                <p style="font-size:12px; color:#64748b">Overall Attendance</p>
+                            </div>
+                            <div class="prog-row">
+                                <div class="prog-labels"><span>Computational Mathematics</span> <span style="color:#ef4444">64%</span></div>
+                                <div class="prog-bg"><div class="prog-fill" style="width:64%; background:#ef4444"></div></div>
+                            </div>
+                            <div class="prog-row">
+                                <div class="prog-labels"><span>Python Programming</span> <span>89%</span></div>
+                                <div class="prog-bg"><div class="prog-fill" style="width:89%"></div></div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header"><i class="ri-notification-3-line"></i> Notifications</div>
+                            <div style="background:#fee2e2; color:#b91c1c; padding:10px; border-radius:8px; font-size:13px; margin-bottom:10px">
+                                ⚠️ Low Attendance Alert in Mathematics!
+                            </div>
+                            <div style="background:#e0e7ff; color:#4338ca; padding:10px; border-radius:8px; font-size:13px">
+                                ℹ️ New study material uploaded for Python.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-classrooms" class="page-section">
+                <div class="room-grid">
+                    <div class="room-card">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px">
+                            <strong style="font-size:20px">D101</strong>
+                            <span style="color:var(--green); font-weight:bold; font-size:12px">● Free</span>
+                        </div>
+                        <p style="font-size:12px; color:gray; margin-bottom:15px">Science Block • Floor 1</p>
+                        <div style="font-size:12px; color:#475569">👤 60 seats • 📽️ Projector • ❄️ AC</div>
+                        <button class="btn-book">Register Room</button>
+                    </div>
+                    <div class="room-card"><div style="display:flex; justify-content:space-between; margin-bottom:10px"><strong style="font-size:20px">D102</strong><span style="color:var(--green); font-weight:bold; font-size:12px">● Free</span></div><p style="font-size:12px; color:gray; margin-bottom:15px">Science Block • Floor 1</p><div style="font-size:12px; color:#475569">👤 60 seats • 📽️ Projector • ❄️ AC</div><button class="btn-book">Register Room</button></div>
+                    <div class="room-card"><div style="display:flex; justify-content:space-between; margin-bottom:10px"><strong style="font-size:20px">D103</strong><span style="color:var(--green); font-weight:bold; font-size:12px">● Free</span></div><p style="font-size:12px; color:gray; margin-bottom:15px">Science Block • Floor 1</p><div style="font-size:12px; color:#475569">👤 60 seats • 📽️ Projector • ❄️ AC</div><button class="btn-book">Register Room</button></div>
+                </div>
+            </section>
+
+            <section id="view-map" class="page-section">
+                <div class="card">
+                    <div class="card-header"><i class="ri-map-pin-2-line"></i> Campus Map - D Block</div>
+                    <div style="height:400px; background:#f1f5f9; border-radius:15px; border:2px dashed #cbd5e1; display:flex; align-items:center; justify-content:center">
+                         <p style="color:#64748b">Interactive Map Interface (F1 - F4)</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-attendance" class="page-section"><div class="card"><h2>Attendance History</h2><p>Detailed logs coming soon...</p></div></section>
+            <section id="view-timetable" class="page-section"><div class="card"><h2>Weekly Timetable</h2><p>Loading schedule...</p></div></section>
+
+        </main>
+    </div>
+
+    <script>
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('live-clock').innerText = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+            document.getElementById('live-date').innerText = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+            const hour = now.getHours();
+            const greetingEl = document.getElementById('dynamic-greeting');
+            if (hour < 12) greetingEl.innerText = "Good Morning, Student!";
+            else if (hour < 17) greetingEl.innerText = "Good Afternoon, Student!";
+            else if (hour < 21) greetingEl.innerText = "Good Evening, Student!";
+            else greetingEl.innerText = "Good Night, Student!";
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+    </script>
+</body>
+</html>
+
+
+
+
+
