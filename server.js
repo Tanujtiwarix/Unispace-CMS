@@ -21,15 +21,16 @@ const supabase = createClient(
 
 app.post('/login', async (req, res) => {
   try {
-    const { id, password } = req.body
+    const { id, password, role } = req.body
 
-    console.log(id, password)
+    console.log("Login:", id, password, role)
 
     const { data, error } = await supabase
       .from('users')
       .select('*')
       .eq('username', id)
       .eq('password', password)
+      .eq('role', role)   
 
     if (error) {
       console.error(error)

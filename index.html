@@ -253,23 +253,32 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ id, password })
+                    body: JSON.stringify({
+                        id,
+                        password,
+                        role: currentRole   // 🔥 IMPORTANT
+                    })
                 });
 
                 const data = await res.json();
 
                 if (data.success) {
-                    alert("Login Successful ✅");
+                    // alert("Login Successful ✅");
 
-                    // Redirect based on role
-                    window.location.href = "2.html";
+                    // redirect based on role
+                    if (currentRole === 'student') {
+                        window.location.href = "2.html";
+                    } else {
+                        window.location.href = "3.html";
+                    }
+
                 } else {
                     alert("Invalid Credentials ❌");
                 }
 
             } catch (err) {
                 console.error(err);
-                alert("Server error / not reachable ❌");
+                alert("Server error ❌");
             }
         }
     </script>
