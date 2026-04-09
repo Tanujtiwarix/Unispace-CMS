@@ -199,10 +199,6 @@
 
             <button type="submit" class="login-btn">Login to Portal</button>
         </form>
-
-        <div class="footer-links">
-            <a href="#">Forgot Password?</a>
-        </div>
     </div>
 
     <script>
@@ -248,7 +244,8 @@
             const password = document.getElementById('passwordInput').value;
 
             try {
-                const res = await fetch('http://127.0.0.1:3000/login', {
+                    const res = await fetch('https://legendary-space-sniffle-wrqv9jq9gjq5c595x-3000.app.github.dev/login', {
+                // const res = await fetch('http://127.0.0.1:3000/login', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -266,19 +263,22 @@
                     // alert("Login Successful ✅");
 
                     // redirect based on role
+
                     if (currentRole === 'student') {
-                        window.location.href = "2.html";
+                        localStorage.setItem('rollno', id);
+                        localStorage.setItem('name', data.name);
+                        window.location.href = "student.html";
                     } else {
-                        window.location.href = "3.html";
+                        window.location.href = "faculty.html";
                     }
 
                 } else {
-                    alert("Invalid Credentials ❌");
+                    alert("Invalid Credentials");
                 }
 
             } catch (err) {
                 console.error(err);
-                alert("Server error ❌");
+                alert("Server error");
             }
         }
     </script>

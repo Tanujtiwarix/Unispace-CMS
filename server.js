@@ -26,11 +26,12 @@ app.post('/login', async (req, res) => {
     console.log("Login:", id, password, role)
 
     const { data, error } = await supabase
-      .from('users')
+      .from('students')
       .select('*')
-      .eq('username', id)
+      .eq('rollno', id)
       .eq('password', password)
       .eq('role', role)   
+      
 
     if (error) {
       console.error(error)
@@ -38,7 +39,8 @@ app.post('/login', async (req, res) => {
     }
 
     if (data.length > 0) {
-      res.json({ success: true })
+      res.json({ success: true, name: data[0].name })
+      console.log(data)
     } else {
       res.json({ success: false })
     }
