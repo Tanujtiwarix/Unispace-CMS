@@ -297,7 +297,8 @@
                 <div class="user-pill">
                     <div class="user-img"><i class="ri-user-line"></i></div>
                     <span>Student</span>
-                    <i class="ri-logout-box-r-line logout-btn" onclick="logout()" style="margin-left:auto; cursor:pointer"></i>
+                    <i class="ri-logout-box-r-line logout-btn" onclick="logout()"
+                        style="margin-left:auto; cursor:pointer"></i>
                 </div>
             </div>
         </aside>
@@ -317,11 +318,7 @@
                     <div class="left-col">
                         <div class="card">
                             <div class="card-header"><i class="ri-calendar-todo-line"></i> Today's Schedule</div>
-                            <div
-                                style="height:180px; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; border:2px dashed #e2e8f0; border-radius:15px;">
-                                <i class="ri-book-open-line" style="font-size:40px; margin-bottom:10px"></i>
-                                <p>No classes scheduled for today.</p>
-                            </div>
+                            <div id="todaySchedule"></div>
                         </div>
                         <div class="card">
                             <div class="card-header"><i class="ri-megaphone-line"></i> Announcements</div>
@@ -418,7 +415,22 @@
             <section id="view-timetable" class="page-section">
                 <div class="card">
                     <h2>Weekly Timetable</h2>
-                    <p>Loading schedule...</p>
+                    <table border="1">
+                        <thead>
+                            <tr>
+                                <th>Day / Time</th>
+                                <th>9:10-10:00</th>
+                                <th>10:05-10:55</th>
+                                <th>11:00-11:50</th>
+                                <th>11:50-12:40</th>
+                                <th>12:40-1:30</th>
+                                <th>1:30-2:20</th>
+                                <th>2:20-3:10</th>
+                                <th>3:10-4:00</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
                 </div>
             </section>
 
@@ -458,6 +470,148 @@
                 window.location.href = "";
             }
         }
+
+
+
+        async function loadTimetable() {
+            try {
+                const section = localStorage.getItem('section') || 'A'
+
+                const res = await fetch(`https://legendary-space-sniffle-wrqv9jq9gjq5c595x-3000.app.github.dev/timetable?section=${section}`)
+                const data = await res.json()
+
+                renderToday(data);
+
+                const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+
+                const tableBody = document.getElementById("tableBody")
+                tableBody.innerHTML = ""
+
+                days.forEach(day => {
+                    const row = document.createElement("tr")
+
+                    // Day column
+                    const dayCell = document.createElement("td")
+                    dayCell.innerText = day
+                    row.appendChild(dayCell)
+
+                    // Lectures L1–L8
+                    for (let i = 1; i <= 8; i++) {
+                        const cell = document.createElement("td")
+
+                        const subject = data[day]?.[i]
+
+                        cell.innerText = subject ? subject : "FREE"
+
+                        row.appendChild(cell)
+                    }
+
+                    tableBody.appendChild(row)
+                })
+
+            } catch (err) {
+                console.error(err)
+            }
+        }
+
+        loadTimetable()
+
+
+        function getTodayName() {
+            const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+            return days[new Date().getDay()]
+        }
+
+        const timeSlots = [
+            ["09:10", "10:00"],
+            ["10:05", "10:55"],
+            ["11:00", "11:50"],
+            ["11:50", "12:40"],
+            ["12:40", "13:30"],
+            ["13:30", "14:20"],
+            ["14:20", "15:10"],
+            ["15:10", "16:00"]
+        ]
+
+        function getCurrentLecture() {
+            const now = new Date()
+            const currentTime = now.getHours() * 60 + now.getMinutes()
+
+            for (let i = 0; i < timeSlots.length; i++) {
+                const [start, end] = timeSlots[i]
+
+                const [sh, sm] = start.split(":").map(Number)
+                const [eh, em] = end.split(":").map(Number)
+
+                const startMin = sh * 60 + sm
+                const endMin = eh * 60 + em
+
+                if (currentTime >= startMin && currentTime <= endMin) {
+                    return i + 1
+                }
+            }
+
+            return null
+        }
+
+
+        const today = getTodayName()
+        const currentLecture = getCurrentLecture()
+
+        days.forEach(day => {
+            if (day !== today) return // 🔥 ONLY SHOW TODAY
+
+            const row = document.createElement("tr")
+
+            const dayCell = document.createElement("td")
+            dayCell.innerText = day
+            row.appendChild(dayCell)
+
+            for (let i = 1; i <= 8; i++) {
+                const cell = document.createElement("td")
+
+                const subject = data[day]?.[i]
+                cell.innerText = subject ? subject : "FREE"
+
+                // 🔥 Highlight current lecture
+                if (i === currentLecture) {
+                    cell.style.backgroundColor = "yellow"
+                }
+
+                row.appendChild(cell)
+            }
+
+            tableBody.appendChild(row)
+        })
+
+        function renderToday(data) {
+            const container = document.getElementById("todaySchedule")
+            container.innerHTML = ""
+
+            const today = new Date().toLocaleDateString('en-US', { weekday: 'long' })
+            const currentLecture = getCurrentLecture()
+
+            const title = document.createElement("h3")
+            title.innerText = today
+            container.appendChild(title)
+
+            for (let i = 1; i <= 8; i++) {
+                const div = document.createElement("div")
+
+                const subject = data[today]?.[i]
+                const text = subject ? subject : "FREE"
+
+                div.innerText = `L${ i } → ${ text }`
+
+                // Highlight current lecture
+                if (i === currentLecture) {
+                    div.style.backgroundColor = "yellow"
+                }
+
+                container.appendChild(div)
+            }
+        }
+
     </script>
 </body>
 

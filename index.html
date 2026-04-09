@@ -267,6 +267,7 @@
                     if (currentRole === 'student') {
                         localStorage.setItem('rollno', id);
                         localStorage.setItem('name', data.name);
+                        localStorage.setItem('section', data.section)
                         window.location.href = "student.html";
                     } else {
                         window.location.href = "faculty.html";

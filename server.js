@@ -39,7 +39,7 @@ app.post('/login', async (req, res) => {
     }
 
     if (data.length > 0) {
-      res.json({ success: true, name: data[0].name })
+      res.json({ success: true, name: data[0].name, section: data[0].section})
       console.log(data)
     } else {
       res.json({ success: false })
@@ -48,6 +48,52 @@ app.post('/login', async (req, res) => {
   } catch (err) {
     console.error(err)
     res.status(500).json({ success: false })
+  }
+})
+
+app.get('/timetable', async (req, res) => {
+  try {
+    const { section } = req.query
+
+    if (!section) {
+      section = 'A';
+    }
+
+    // 🔥 JOIN timetable + subjects
+    const { data, error } = await supabase
+      .from('timetable')
+      .select(`
+        day,
+        lecture,
+        subject_code,
+        subjects (
+          subject_name,
+          teacher_name
+        )
+      `)
+      .eq('section', section)
+
+    if (error) throw error
+
+    // Convert to grid
+    const result = {}
+
+    data.forEach(row => {
+      if (!result[row.day]) result[row.day] = {}
+
+      if (row.subjects) {
+        result[row.day][row.lecture] =
+          row.subjects.subject_name + " (" + row.subjects.teacher_name + ")"
+      } else {
+        result[row.day][row.lecture] = null
+      }
+    })
+
+    res.json(result)
+
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Server error' })
   }
 })
 
