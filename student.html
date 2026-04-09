@@ -28,7 +28,6 @@
             height: 100vh;
             overflow: hidden;
         }
-
         .app-container {
             display: flex;
             height: 100vh;
@@ -318,7 +317,7 @@
                     <div class="left-col">
                         <div class="card">
                             <div class="card-header"><i class="ri-calendar-todo-line"></i> Today's Schedule</div>
-                            <div id="todaySchedule"></div>
+                            <div id="todaySchedule" class="today-grid"></div>
                         </div>
                         <div class="card">
                             <div class="card-header"><i class="ri-megaphone-line"></i> Announcements</div>
@@ -415,22 +414,7 @@
             <section id="view-timetable" class="page-section">
                 <div class="card">
                     <h2>Weekly Timetable</h2>
-                    <table border="1">
-                        <thead>
-                            <tr>
-                                <th>Day / Time</th>
-                                <th>9:10-10:00</th>
-                                <th>10:05-10:55</th>
-                                <th>11:00-11:50</th>
-                                <th>11:50-12:40</th>
-                                <th>12:40-1:30</th>
-                                <th>1:30-2:20</th>
-                                <th>2:20-3:10</th>
-                                <th>3:10-4:00</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tableBody"></tbody>
-                    </table>
+                    <div id="weeklyGrid" class="weekly-wrapper"></div>
                 </div>
             </section>
 
@@ -473,6 +457,7 @@
 
 
 
+
         async function loadTimetable() {
             try {
                 const section = localStorage.getItem('section') || 'A'
@@ -480,37 +465,14 @@
                 const res = await fetch(`https://legendary-space-sniffle-wrqv9jq9gjq5c595x-3000.app.github.dev/timetable?section=${section}`)
                 const data = await res.json()
 
-                renderToday(data);
+                console.log("TIMETABLE DATA:", data)
 
-                const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
-
-                const tableBody = document.getElementById("tableBody")
-                tableBody.innerHTML = ""
-
-                days.forEach(day => {
-                    const row = document.createElement("tr")
-
-                    // Day column
-                    const dayCell = document.createElement("td")
-                    dayCell.innerText = day
-                    row.appendChild(dayCell)
-
-                    // Lectures L1–L8
-                    for (let i = 1; i <= 8; i++) {
-                        const cell = document.createElement("td")
-
-                        const subject = data[day]?.[i]
-
-                        cell.innerText = subject ? subject : "FREE"
-
-                        row.appendChild(cell)
-                    }
-
-                    tableBody.appendChild(row)
-                })
+                // 🔥 render both UIs
+                renderToday(data)
+                renderWeekly(data)
 
             } catch (err) {
-                console.error(err)
+                console.error("Error loading timetable:", err)
             }
         }
 
@@ -518,7 +480,7 @@
 
 
         function getTodayName() {
-            const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+            const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
             return days[new Date().getDay()]
         }
 
@@ -555,64 +517,87 @@
         }
 
 
-        const today = getTodayName()
-        const currentLecture = getCurrentLecture()
-
-        days.forEach(day => {
-            if (day !== today) return // 🔥 ONLY SHOW TODAY
-
-            const row = document.createElement("tr")
-
-            const dayCell = document.createElement("td")
-            dayCell.innerText = day
-            row.appendChild(dayCell)
-
-            for (let i = 1; i <= 8; i++) {
-                const cell = document.createElement("td")
-
-                const subject = data[day]?.[i]
-                cell.innerText = subject ? subject : "FREE"
-
-                // 🔥 Highlight current lecture
-                if (i === currentLecture) {
-                    cell.style.backgroundColor = "yellow"
-                }
-
-                row.appendChild(cell)
-            }
-
-            tableBody.appendChild(row)
-        })
-
         function renderToday(data) {
             const container = document.getElementById("todaySchedule")
             container.innerHTML = ""
 
-            const today = new Date().toLocaleDateString('en-US', { weekday: 'long' })
+            const today = getTodayName()
             const currentLecture = getCurrentLecture()
 
-            const title = document.createElement("h3")
-            title.innerText = today
-            container.appendChild(title)
-
             for (let i = 1; i <= 8; i++) {
-                const div = document.createElement("div")
+                const card = document.createElement("div")
+                card.className = "today-card"
 
-                const subject = data[today]?.[i]
-                const text = subject ? subject : "FREE"
+                const lecture = data[today]?.[i]
+                const subject = lecture?.subject || "Free Lecture"
+                const teacher = lecture?.teacher || ""
+                const time = timeSlots[i - 1]
 
-                div.innerText = `L${ i } → ${ text }`
+                card.innerHTML = `
+            <div class="today-subject">${subject}</div>
+            <div class="today-teacher">${teacher}</div>
+            <div class="today-time">${time[0]} - ${time[1]}</div>
+        `
 
-                // Highlight current lecture
-                if (i === currentLecture) {
-                    div.style.backgroundColor = "yellow"
+                if (lecture) {
+                    card.classList.add("has-class")
+                } else {
+                    card.classList.remove("has-class")
                 }
 
-                container.appendChild(div)
+                if (i === currentLecture) {
+                    card.classList.add("current-card")
+                }
+
+                container.appendChild(card)
             }
         }
 
+        function renderWeekly(data = {}) {
+            const container = document.getElementById("weeklyGrid")
+            if (!container) return
+
+            container.innerHTML = ""
+
+            const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+
+            days.forEach(day => {
+                const card = document.createElement("div")
+                card.className = "day-card"
+
+                let classesHTML = ""
+
+                for (let i = 1; i <= 8; i++) {
+                    const lecture = data?.[day]?.[i] || null
+
+                    const subject = lecture?.subject?.trim() || ""
+                    const teacher = lecture?.teacher?.trim() || ""
+                    const isFree = !subject
+
+                    const time = timeSlots?.[i - 1] || ["--", "--"]
+
+                    classesHTML += `
+                <div class="class-item ${isFree ? "free" : "busy"}">
+                    <div class="class-time">${time[0]} - ${time[1]}</div>
+                    <div class="class-subject">
+                        ${isFree ? "Free Lecture" : subject}
+                    </div>
+                    ${!isFree && teacher ? `<div class="class-teacher">(${teacher})</div>` : ""}
+                </div>
+            `
+                }
+
+                card.innerHTML = `
+            <div class="day-header">${day}</div>
+            <div class="day-body">${classesHTML}</div>
+        `
+
+                container.appendChild(card)
+            })
+        }
+
     </script>
+
 </body>
 
 </html>

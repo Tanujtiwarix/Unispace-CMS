@@ -30,8 +30,8 @@ app.post('/login', async (req, res) => {
       .select('*')
       .eq('rollno', id)
       .eq('password', password)
-      .eq('role', role)   
-      
+      .eq('role', role)
+
 
     if (error) {
       console.error(error)
@@ -39,7 +39,7 @@ app.post('/login', async (req, res) => {
     }
 
     if (data.length > 0) {
-      res.json({ success: true, name: data[0].name, section: data[0].section})
+      res.json({ success: true, name: data[0].name, section: data[0].section })
       console.log(data)
     } else {
       res.json({ success: false })
@@ -82,8 +82,11 @@ app.get('/timetable', async (req, res) => {
       if (!result[row.day]) result[row.day] = {}
 
       if (row.subjects) {
-        result[row.day][row.lecture] =
-          row.subjects.subject_name + " (" + row.subjects.teacher_name + ")"
+        result[row.day][row.lecture] = {
+          subject: row.subjects.subject_name,
+          teacher: row.subjects.teacher_name
+        }
+
       } else {
         result[row.day][row.lecture] = null
       }
