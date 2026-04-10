@@ -100,6 +100,93 @@ app.get('/timetable', async (req, res) => {
   }
 })
 
+app.get('/free-rooms', async (req, res) => {
+  try {
+    const now = new Date()
+
+    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+    const today = days[now.getDay()]
+
+    const timeSlots = [
+      ["09:10", "10:00"],
+      ["10:05", "10:55"],
+      ["11:00", "11:50"],
+      ["11:50", "12:40"],
+      ["12:40", "13:30"],
+      ["13:30", "14:20"],
+      ["14:20", "15:10"],
+      ["15:10", "16:00"]
+    ]
+
+    const currentMinutes = now.getHours() * 60 + now.getMinutes()
+    let currentLecture = null
+
+    for (let i = 0; i < timeSlots.length; i++) {
+      const [start, end] = timeSlots[i]
+
+      const [sh, sm] = start.split(":").map(Number)
+      const [eh, em] = end.split(":").map(Number)
+
+      const startMin = sh * 60 + sm
+      const endMin = eh * 60 + em
+
+      if (currentMinutes >= startMin && currentMinutes <= endMin) {
+        currentLecture = i + 1
+        break
+      }
+    }
+
+    // ❗ If no class currently running
+    if (!currentLecture) {
+      const { data: allRooms } = await supabase
+        .from('rooms')
+        .select('room_code')
+
+      return res.json({
+        success: true,
+        freeRooms: allRooms
+      })
+    }
+
+    // 🔥 1. GET OCCUPIED ROOMS
+    const { data: occupied, error: err1 } = await supabase
+      .from('room_usage')
+      .select('room_code')
+      .eq('day', today)
+      .eq('lecture', currentLecture)
+
+    if (err1) throw err1
+
+    // 🔥 2. GET ALL ROOMS
+    const { data: allRooms, error: err2 } = await supabase
+      .from('rooms')
+      .select('room_code')
+
+    if (err2) throw err2
+
+    const occupiedSet = new Set(
+      occupied.map(r => r.room_code.trim())
+    )
+
+    // 🔥 3. FILTER FREE ROOMS
+    const freeRooms = allRooms.filter(
+      r => !occupiedSet.has(r.room_code.trim())
+    )
+
+    res.json({
+      success: true,
+      day: today,
+      lecture: currentLecture,
+      freeRooms
+    })
+
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ success: false })
+  }
+})
+
+
 app.listen(3000, () => {
   console.log('Server running on port 3000')
 })

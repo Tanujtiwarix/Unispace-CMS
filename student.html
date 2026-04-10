@@ -28,6 +28,7 @@
             height: 100vh;
             overflow: hidden;
         }
+
         .app-container {
             display: flex;
             height: 100vh;
@@ -480,7 +481,7 @@
 
 
         function getTodayName() {
-            const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+            const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
             return days[new Date().getDay()]
         }
 
@@ -528,7 +529,8 @@
                 const card = document.createElement("div")
                 card.className = "today-card"
 
-                const lecture = data[today]?.[i]
+                const lecture = data?.[today]?.[i]
+
                 const subject = lecture?.subject || "Free Lecture"
                 const teacher = lecture?.teacher || ""
                 const time = timeSlots[i - 1]
@@ -539,11 +541,7 @@
             <div class="today-time">${time[0]} - ${time[1]}</div>
         `
 
-                if (lecture) {
-                    card.classList.add("has-class")
-                } else {
-                    card.classList.remove("has-class")
-                }
+                if (lecture) card.classList.add("has-class")
 
                 if (i === currentLecture) {
                     card.classList.add("current-card")
@@ -555,8 +553,6 @@
 
         function renderWeekly(data = {}) {
             const container = document.getElementById("weeklyGrid")
-            if (!container) return
-
             container.innerHTML = ""
 
             const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
@@ -565,36 +561,70 @@
                 const card = document.createElement("div")
                 card.className = "day-card"
 
-                let classesHTML = ""
+                let html = `<div class="day-header">${day}</div>`
+                html += `<div class="day-body">`
 
                 for (let i = 1; i <= 8; i++) {
-                    const lecture = data?.[day]?.[i] || null
+                    const lecture = data?.[day]?.[i]
 
-                    const subject = lecture?.subject?.trim() || ""
-                    const teacher = lecture?.teacher?.trim() || ""
-                    const isFree = !subject
+                    const subject = lecture?.subject || "Free"
+                    const teacher = lecture?.teacher || ""
+                    const time = timeSlots[i - 1]
 
-                    const time = timeSlots?.[i - 1] || ["--", "--"]
-
-                    classesHTML += `
-                <div class="class-item ${isFree ? "free" : "busy"}">
-                    <div class="class-time">${time[0]} - ${time[1]}</div>
-                    <div class="class-subject">
-                        ${isFree ? "Free Lecture" : subject}
-                    </div>
-                    ${!isFree && teacher ? `<div class="class-teacher">(${teacher})</div>` : ""}
+                    html += `
+                <div class="class-item ${lecture ? 'busy' : 'free'}">
+                    <div class="class-time">${time[0]}</div>
+                    <div class="class-subject">${subject}</div>
+                    <div class="class-teacher">${teacher}</div>
                 </div>
             `
                 }
 
+                html += `</div>`
+
+                card.innerHTML = html
+                container.appendChild(card)
+            })
+        }
+
+
+        async function loadClassrooms() {
+            try {
+                const res = await fetch("https://legendary-space-sniffle-wrqv9jq9gjq5c595x-3000.app.github.dev/free-rooms")
+                const data = await res.json()
+
+                if (!data.success) return
+
+                renderClassrooms(data.freeRooms)
+
+            } catch (err) {
+                console.error("Classroom error:", err)
+            }
+        }
+
+        function renderClassrooms(rooms) {
+            const container = document.querySelector(".room-grid")
+            container.innerHTML = ""
+
+            rooms.forEach(r => {
+                const card = document.createElement("div")
+                card.className = "room-card"
+
                 card.innerHTML = `
-            <div class="day-header">${day}</div>
-            <div class="day-body">${classesHTML}</div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px">
+                <strong style="font-size:20px">${r.room_code}</strong>
+                <span style="color:var(--green); font-weight:bold; font-size:12px">● Free</span>
+            </div>
+            <p style="font-size:12px; color:gray; margin-bottom:15px">Science Block</p>
+            <div style="font-size:12px; color:#475569">👤 60 seats • 📽️ Projector • ❄️ AC</div>
+            <button class="btn-book">Register Room</button>
         `
 
                 container.appendChild(card)
             })
         }
+
+        loadClassrooms()
 
     </script>
 
