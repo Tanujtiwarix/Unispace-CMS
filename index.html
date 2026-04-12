@@ -244,8 +244,16 @@
             const password = document.getElementById('passwordInput').value;
 
             try {
-                    const res = await fetch('https://legendary-space-sniffle-wrqv9jq9gjq5c595x-3000.app.github.dev/login', {
-                // const res = await fetch('http://127.0.0.1:3000/login', {
+                let url = '';
+
+                // Decide endpoint based on role
+                if (currentRole === 'faculty') {
+                    url = '/faclogin';
+                } else {
+                    url = '/login';
+                }
+
+                const res = await fetch(url, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -253,24 +261,31 @@
                     body: JSON.stringify({
                         id,
                         password,
-                        role: currentRole   // 🔥 IMPORTANT
+                        role: currentRole
                     })
                 });
 
                 const data = await res.json();
 
                 if (data.success) {
-                    // alert("Login Successful ✅");
 
-                    // redirect based on role
-
-                    if (currentRole === 'student') {
+                    // STUDENT
+                    if (currentRole === 'student' || currentRole === 'student-register') {
                         localStorage.setItem('rollno', id);
                         localStorage.setItem('name', data.name);
-                        localStorage.setItem('section', data.section)
-                        window.location.href = "student.html";
-                    } else {
-                        window.location.href = "faculty.html";
+                        localStorage.setItem('section', data.section);
+                        localStorage.setItem('role', currentRole);
+
+                        window.location.href = "/student";
+                    }
+
+                    // FACULTY
+                    else if (currentRole === 'faculty') {
+                        localStorage.setItem('rollno', id);
+                        localStorage.setItem('name', data.name);
+                        localStorage.setItem('role', currentRole);
+
+                        window.location.href = "/faculty";
                     }
 
                 } else {
@@ -282,6 +297,7 @@
                 alert("Server error");
             }
         }
+
     </script>
 </body>
 

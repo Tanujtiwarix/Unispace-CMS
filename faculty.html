@@ -1,10 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Unispace | Faculty Portal</title>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/qrious"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
     <style>
         /* EXACT CSS STYLING FROM STUDENT PORTAL */
         :root {
@@ -16,76 +20,773 @@
             --pink: #db2777;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-        body { background: var(--bg); color: #334155; height: 100vh; overflow: hidden; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+        }
 
-        .app-container { display: flex; height: 100vh; }
+        body {
+            background: var(--bg);
+            color: #334155;
+            height: 100vh;
+            overflow-x: hidden;
+        }
+
+        button {
+            touch-action: manipulation;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
 
         /* Navigation Logic - FIXED MAPPING */
-        input[type="radio"] { display: none; }
-        .page-section { display: none; }
+        input[type="radio"] {
+            display: none;
+        }
 
-        #tab-dash:checked ~ .main-content #view-dashboard,
-        #tab-att:checked ~ .main-content #view-attendance,
-        #tab-ann:checked ~ .main-content #view-announcements,
-        #tab-rooms:checked ~ .main-content #view-booking,
-        #tab-time:checked ~ .main-content #view-timetable {
+        .page-section {
+            display: none;
+        }
+
+        #tab-dash:checked~.main-content #view-dashboard,
+        #tab-att:checked~.main-content #view-attendance,
+        #tab-ann:checked~.main-content #view-announcements,
+        #tab-rooms:checked~.main-content #view-booking,
+        #tab-time:checked~.main-content #view-timetable {
             display: block;
         }
 
         /* Sidebar Styling */
-        .sidebar { width: 260px; background: #fff; border-right: 1px solid var(--border); display: flex; flex-direction: column; }
-        .brand { padding: 25px; display: flex; align-items: center; gap: 12px; }
-        .logo-box { background: var(--primary); color: #fff; padding: 8px; border-radius: 8px; font-size: 20px; }
-        .brand-info strong { display: block; font-size: 18px; color: #1e293b; }
-        .brand-info span { font-size: 11px; color: #64748b; font-weight: 500; }
-
-        .nav-menu { flex: 1; padding: 10px; }
-        .nav-item { 
-            padding: 12px 16px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 12px; 
-            color: #475569; font-weight: 500; margin-bottom: 5px; transition: 0.2s;
+        .sidebar {
+            width: 260px;
+            background: #fff;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
         }
-        .nav-item:hover { background: #f1f5f9; color: var(--primary); }
-        
+
+        .brand {
+            padding: 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-box {
+            background: var(--primary);
+            color: #fff;
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 20px;
+        }
+
+        .brand-info strong {
+            display: block;
+            font-size: 18px;
+            color: #1e293b;
+        }
+
+        .brand-info span {
+            font-size: 11px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .nav-menu {
+            flex: 1;
+            padding: 10px;
+        }
+
+        .nav-item {
+            padding: 12px 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #475569;
+            font-weight: 500;
+            margin-bottom: 5px;
+            transition: 0.2s;
+        }
+
+        .nav-item:hover {
+            background: #f1f5f9;
+            color: var(--primary);
+        }
+
         /* Active State Highlights */
-        #tab-dash:checked ~ .sidebar .nav-dash,
-        #tab-att:checked ~ .sidebar .nav-att,
-        #tab-ann:checked ~ .sidebar .nav-ann,
-        #tab-rooms:checked ~ .sidebar .nav-rooms,
-        #tab-time:checked ~ .sidebar .nav-time {
-            background: #f1f5f9; color: var(--primary); font-weight: 700;
+        #tab-dash:checked~.sidebar .nav-dash,
+        #tab-att:checked~.sidebar .nav-att,
+        #tab-ann:checked~.sidebar .nav-ann,
+        #tab-rooms:checked~.sidebar .nav-rooms,
+        #tab-time:checked~.sidebar .nav-time {
+            background: #f1f5f9;
+            color: var(--primary);
+            font-weight: 700;
         }
 
         /* FIXED PROFESSOR PILL STYLING */
-        .sidebar-footer { padding: 20px; border-top: 1px solid var(--border); }
-        .user-pill { display: flex; align-items: center; gap: 10px; background: #f8fafc; padding: 10px; border-radius: 12px; border: 1px solid var(--border); }
-        .user-img { width: 35px; height: 35px; background: #cbd5e1; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; flex-shrink: 0; }
-        .user-info { display: flex; flex-direction: column; overflow: hidden; }
-        .user-name { font-size: 13px; font-weight: 700; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .user-role { font-size: 10px; color: #64748b; font-weight: 600; text-transform: uppercase; }
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .user-pill {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f8fafc;
+            padding: 10px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .user-img {
+            width: 35px;
+            height: 35px;
+            background: #cbd5e1;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .user-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: #1e293b;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-role {
+            font-size: 10px;
+            color: #64748b;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
 
         /* Main Content */
-        .main-content { flex: 1; padding: 40px; overflow-y: auto; }
-        .page-header h1 { color: var(--primary); font-size: 32px; margin-bottom: 5px; }
-        .header-subtext { color: #64748b; font-size: 14px; margin-bottom: 30px; font-weight: 500; }
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+        }
+
+        .page-header h1 {
+            color: var(--primary);
+            font-size: 32px;
+            margin-bottom: 5px;
+        }
+
+        .header-subtext {
+            color: #64748b;
+            font-size: 14px;
+            margin-bottom: 30px;
+            font-weight: 500;
+        }
 
         /* Cards & Grids */
-        .dashboard-grid { display: grid; grid-template-columns: 1.6fr 1.2fr; gap: 25px; }
-        .card { background: #fff; border: 1px solid var(--border); border-radius: 20px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 20px;}
-        .card-header { font-weight: 700; color: var(--navy); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-size: 18px; }
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1.6fr 1.2fr;
+            gap: 25px;
+        }
 
-        .stat-box { background: #eff6ff; border-radius: 15px; padding: 20px; text-align: center; margin-bottom: 20px; border: 1px solid #dbeafe; }
-        .stat-val { font-size: 36px; font-weight: 800; color: var(--primary); }
-        
-        .btn-action { width: 100%; background: var(--primary); color: #fff; border: none; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: 600; margin-top: 10px; transition: 0.3s; }
-        .btn-action:hover { background: var(--navy); }
-        .textarea-input { width: 100%; border: 1px solid var(--border); border-radius: 12px; padding: 15px; outline: none; margin-bottom: 10px; resize: none; font-family: inherit; }
-        
+        .card {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            font-weight: 700;
+            color: var(--navy);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+        }
+
+        .stat-box {
+            background: #eff6ff;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            border: 1px solid #dbeafe;
+        }
+
+        .stat-val {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .btn-action {
+            width: 100%;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 10px;
+            transition: 0.3s;
+        }
+
+        .btn-action:hover {
+            background: var(--navy);
+        }
+
+        .textarea-input {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 15px;
+            outline: none;
+            margin-bottom: 10px;
+            resize: none;
+            font-family: inherit;
+        }
+
         /* Attendance Table styling */
-        .att-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid var(--border); }
-        .att-row:last-child { border: none; }
+        .att-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .att-row:last-child {
+            border: none;
+        }
+
+
+        /*  */
+
+        /* 🟦 TODAY GRID */
+        .today-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+        }
+
+        /* 💎 CARD */
+        .today-card {
+            background: #ecfdf5;
+            border: 2px solid #bbf7d0;
+            border-radius: 16px;
+            padding: 16px;
+            text-align: center;
+            transition: 0.25s;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        /* 🔵 HAS CLASS */
+        .has-class {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            border: none;
+            color: white;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+        }
+
+        /* 🟨 CURRENT */
+        .current-card {
+            border: 2px solid #facc15;
+            background: #fef9c3;
+        }
+
+        .current-card .today-time {
+            border: 2px solid #facc15;
+            background: #a69a10;
+        }
+
+
+
+
+
+        /* 📚 SUBJECT */
+        .today-subject {
+            font-size: 15px;
+            font-weight: 700;
+            color: #065f46;
+        }
+
+        /* 👨‍🏫 SECTION */
+        .today-teacher {
+            font-size: 12px;
+            color: #047857;
+        }
+
+        /* ⏰ TIME */
+        .today-time {
+            font-size: 11px;
+            background: #bbf7d0;
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        /* 🔥 WHEN ACTIVE */
+        .has-class .today-subject {
+            color: rgb(27, 26, 26);
+        }
+
+        .has-class .today-teacher {
+            color: rgba(23, 22, 22, 0.85);
+        }
+
+        .has-class .today-time {
+            background: rgba(255, 255, 255, 0.2);
+            color: rgb(16, 16, 16);
+        }
+
+        /*  */
+        /* 🌍 WEEK GRID */
+        .weekly-wrapper {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        /* 📦 DAY CARD */
+        .day-card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 12px;
+            border: 2px solid #33a4f0;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+        }
+
+        /* 🏷 DAY HEADER */
+        .day-header {
+            text-align: center;
+            font-weight: 700;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        /* 📚 BODY */
+        .day-body {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+        }
+
+        /* 🎴 CLASS BLOCK */
+        .class-item {
+            border-radius: 12px;
+            padding: 6px;
+            text-align: center;
+            font-size: 10px;
+        }
+
+        /* 🔵 BUSY */
+        .class-item.busy {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+        }
+
+        /* 🟢 FREE */
+        .class-item.free {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+        }
+
+        /* 📖 SUBJECT */
+        .class-subject {
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        /* 👨‍🏫 SECTION */
+        .class-teacher {
+            font-size: 9px;
+            opacity: 0.85;
+        }
+
+        /* 🏫 ROOM */
+        .class-time {
+            font-size: 9px;
+            opacity: 0.75;
+        }
+
+        .today-card:hover,
+        .class-item:hover {
+            transform: translateY(-3px);
+        }
+
+        #liveList {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .student-card {
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            animation: pop 0.3s ease;
+        }
+
+        @keyframes pop {
+            from {
+                transform: scale(0.9);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        #liveCount {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #2563eb;
+        }
+
+        .refresh-btn {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        /* 🔷 ROOM GRID */
+        .room-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        /* 💎 ROOM CARD */
+        .room-card {
+            border: 1px solid #dcfce7;
+            background: #fff;
+            padding: 20px;
+            border-radius: 16px;
+            border-top: 5px solid var(--green);
+            transition: 0.25s;
+        }
+
+        .room-card:hover {
+            transform: translateY(-5px);
+        }
+
+        /* 🔘 BUTTON (same as student) */
+        .btn-book {
+            width: 100%;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            margin-top: 15px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+
+        .btn-book:hover {
+            background: var(--navy);
+        }
+
+        /* 🌫 MODAL BACKDROP */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+        }
+
+        /* 📦 MODAL CARD */
+        .modal-card {
+            background: #fff;
+            width: 420px;
+            border-radius: 18px;
+            padding: 25px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+            animation: fadeIn 0.25s ease;
+        }
+
+        /* HEADER */
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 18px;
+            color: var(--navy);
+        }
+
+        .close-btn {
+            cursor: pointer;
+            font-size: 20px;
+            color: #05295c;
+        }
+
+        /* SUBTEXT */
+        .modal-sub {
+            font-size: 12px;
+            color: #64748b;
+            margin: 10px 0 20px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .form-grid .full {
+            grid-column: span 2;
+        }
+
+        .form-grid label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .form-grid input,
+        .form-grid select,
+        .form-grid textarea {
+            width: 100%;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            margin-top: 5px;
+            font-size: 13px;
+        }
+
+        textarea {
+            resize: none;
+            height: 70px;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-cancel {
+            background: #334155;
+            color: white;
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-submit {
+            background: var(--primary);
+            color: white;
+            padding: 10px 16px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-submit:hover {
+            background: var(--navy);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+
+            .room-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-card {
+                width: 95%;
+                border-radius: 14px;
+            }
+
+            .btn-book,
+            .btn-submit {
+                width: 100%;
+                padding: 14px;
+                font-size: 16px;
+            }
+        }
+
+        .qr-close-btn {
+            margin-top: 15px;
+            padding: 10px 18px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .qr-close-btn:hover {
+            background: #dc2626;
+            transform: scale(1.05);
+        }
+
+        .btn-cancel {
+            margin-top: 10px;
+            width: 100%;
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .btn-cancel:hover {
+            background: #dc2626;
+        }
+
+        .cancelled-slot {
+            background: #e5e7eb !important;
+            opacity: 0.7;
+            pointer-events: none;
+            /* 🔥 disables clicks */
+        }
+
+        /* 🔥 FULL MOBILE FIX (COPIED FROM STUDENT UI) */
+        @media (max-width: 768px) {
+
+            body {
+                overflow: auto;
+            }
+
+            .app-container {
+                flex-direction: column;
+            }
+
+            /* 🔥 Sidebar → Top scroll nav */
+            .sidebar {
+                width: 100%;
+                height: auto;
+                flex-direction: row;
+                overflow-x: auto;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .nav-menu {
+                display: flex;
+                gap: 10px;
+                padding: 10px;
+            }
+
+            .nav-item {
+                white-space: nowrap;
+                padding: 10px;
+                font-size: 13px;
+            }
+
+            .main-content {
+                padding: 15px;
+            }
+
+            /* 🔥 GRID FIX */
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .today-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .weekly-wrapper {
+                grid-template-columns: 1fr;
+            }
+
+            .room-grid {
+                grid-template-columns: 1fr;
+            }
+
+            /* 🔥 BUTTONS TOUCH FRIENDLY */
+            .btn-action,
+            .btn-book,
+            .btn-submit {
+                width: 100%;
+                padding: 14px;
+                font-size: 16px;
+            }
+
+            /* 🔥 MODAL FULL WIDTH */
+            .modal-card {
+                width: 95%;
+                border-radius: 14px;
+            }
+        }
+
+        /* 🔥 EXTRA SMALL DEVICES */
+        @media (max-width: 480px) {
+            .today-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .card {
+                padding: 16px;
+            }
+
+            .page-header h1 {
+                font-size: 22px;
+            }
+        }
     </style>
 </head>
+
 <body>
 
     <div class="app-container">
@@ -103,11 +804,12 @@
                     <span>Faculty Portal</span>
                 </div>
             </div>
-            
+
             <nav class="nav-menu">
                 <label for="tab-dash" class="nav-item nav-dash"><i class="ri-layout-grid-fill"></i> Dashboard</label>
                 <label for="tab-att" class="nav-item nav-att"><i class="ri-line-chart-line"></i>Attendance</label>
-                <label for="tab-ann" class="nav-item nav-ann"><i class="ri-notification-3-line"></i> Announcements</label>
+                <label for="tab-ann" class="nav-item nav-ann"><i class="ri-notification-3-line"></i>
+                    Announcements</label>
                 <label for="tab-rooms" class="nav-item nav-rooms"><i class="ri-door-open-line"></i> Bookings</label>
                 <label for="tab-time" class="nav-item nav-time"><i class="ri-calendar-2-line"></i> Schedule</label>
             </nav>
@@ -116,10 +818,11 @@
                 <div class="user-pill">
                     <div class="user-img"><i class="ri-user-star-line"></i></div>
                     <div class="user-info">
-                        <span class="user-name">Prof. Ramesh Kumar</span>
+                        <span id="loguser">Prof.</span>
                         <span class="user-role">CSE Faculty</span>
                     </div>
-                    <i class="ri-logout-box-r-line" style="margin-left:auto; cursor:pointer; color: #94a3b8;"></i>
+                    <i class="ri-logout-box-r-line" style="margin-left:auto; cursor:pointer; color: #94a3b8;"
+                        onclick="logout()"></i>
                 </div>
             </div>
         </aside>
@@ -138,24 +841,17 @@
                 <div class="dashboard-grid">
                     <div class="left-col">
                         <div class="card">
-                            <div class="card-header"><i class="ri-bar-chart-box-line"></i> Daily Summary</div>
-                            <div class="stat-box">
-                                <div class="stat-val">4</div>
-                                <p style="font-size:12px; color:#64748b; font-weight: 600;">Lectures Today</p>
-                            </div>
-                            <div class="stat-box" style="background: #fff1f2; border-color: #ffe4e6; margin-bottom: 0;">
-                                <div class="stat-val" style="color: #e11d48;">2</div>
-                                <p style="font-size:12px; color:#64748b; font-weight: 600;">Attendance Pending</p>
+                            <div class="card">
+                                <div class="card-header">
+                                    <i class="ri-calendar-todo-line"></i> Today's Schedule
+                                </div>
+                                <div id="facultyToday" class="today-grid"></div>
                             </div>
                         </div>
                     </div>
                     <div class="right-col">
                         <div class="card">
-                            <div class="card-header"><i class="ri-map-pin-user-line"></i> Active Booking</div>
-                            <div style="padding: 20px; border: 1px solid #fae8ff; border-radius: 15px; background: #fdf4ff; border-left: 5px solid #d946ef;">
-                                <strong style="color: #a21caf; font-size: 18px;">Lab D-102</strong>
-                                <p style="font-size: 13px; color: #701a75; margin-top: 5px;">Reserved for Python Practical (Sec-A)</p>
-                            </div>
+                            <div id="activeBookingCard"></div>
                         </div>
                     </div>
                 </div>
@@ -163,67 +859,191 @@
 
             <section id="view-attendance" class="page-section">
                 <div class="card">
-                    <div class="card-header"><i class="ri-checkbox-circle-line"></i> Student Attendance - Section A</div>
-                    <div class="att-row">
-                        <div>
-                            <strong style="font-size: 15px;">2026CS101</strong>
-                            <p style="font-size: 13px; color: gray;">Aarav Sharma</p>
-                        </div>
-                        <button onclick="toggleAttendance(this)" 
-                            style="padding: 8px 20px; background: #dcfce7; color: #166534; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s;">PRESENT</button>
+
+                    <div class="card-header">
+                        <i class="ri-qr-code-line"></i> Take Attendance
                     </div>
-                    <div class="att-row">
-                        <div>
-                            <strong style="font-size: 15px;">2026CS102</strong>
-                            <p style="font-size: 13px; color: gray;">Isha Patel</p>
-                        </div>
-                        <button onclick="toggleAttendance(this)" 
-                            style="padding: 8px 20px; background: #dcfce7; color: #166534; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s;">PRESENT</button>
+
+                    <div class="stat-box">
+                        <div class="stat-val">Live</div>
+                        <p>Start attendance for current lecture</p>
                     </div>
-                    <button class="btn-action" style="margin-top: 25px;">Submit Final Attendance</button>
+
+                    <button class="btn-action" onclick="handleStartAttendance()">
+                        Generate QR & Start
+                    </button>
+
+                    <!-- QR MODAL -->
+                    <div id="qrModal"
+                        style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:999; align-items:center; justify-content:center;">
+
+                        <div
+                            style="background:white; padding:25px; border-radius:20px; width:350px; text-align:center; position:relative;">
+                            <h3 id="qrTitle">Attendance</h3>
+                            <canvas id="qrCanvas"></canvas>
+
+                            <p style="font-size:12px; margin-top:10px; color:gray;">
+                                QR refreshes automatically after scan
+                            </p>
+
+                            <button onclick="closeQR()" style="margin-top:15px;" class="qr-close-btn">Close</button>
+                        </div>
+
+                        <!-- LIVE LIST -->
+                        <div class="card">
+
+                            <div class="card-header" style="display:flex; justify-content:space-between;">
+                                📡 Live Attendance
+                                <button onclick="refreshAttendance()" class="refresh-btn">🔄</button>
+                            </div>
+
+                            <div id="liveList"></div>
+                            <div id="liveCount">0 Students</div>
+                        </div>
+
+                    </div>
+
                 </div>
             </section>
 
             <section id="view-announcements" class="page-section">
                 <div class="card">
-                    <div class="card-header"><i class="ri-megaphone-line"></i> Post New Announcement</div>
-                    <textarea class="textarea-input" rows="5" placeholder="Share updates, assignments or exam dates with your students..."></textarea>
-                    <button class="btn-action" onclick="alert('Announcement Sent to Students!')">Broadcast Message</button>
+                    <div class="card-header">
+                        <i class="ri-megaphone-line"></i> Post New Announcement
+                    </div>
+
+                    <select id="annSection" class="textarea-input">
+                        <option value="AIML-1">AIML-1</option>
+                        <option value="AIML-2">AIML-2</option>
+                        <option value="AIML-3">AIML-3</option>
+                        <option value="AIML-4">AIML-4</option>
+                        <option value="AIML-5">AIML-5</option>
+                        <option value="AIML-6">AIML-6</option>
+                        <option value="AIML-7">AIML-7</option>
+
+                        <option value="CSE-1">CSE-1</option>
+                        <option value="CSE-2">CSE-2</option>
+                        <option value="CSE-3">CSE-3</option>
+                        <option value="CSE-4">CSE-4</option>
+                        <option value="CSE-5">CSE-5</option>
+
+                        <option value="DS-1">DS-1</option>
+                        <option value="DS-2">DS-2</option>
+                        <option value="DS-3">DS-3</option>
+
+                        <option value="ROB-1">ROB-1</option>
+                        <option value="ROB-2">ROB-2</option>
+                        <option value="ROB-3">ROB-3</option>
+                        <option value="ROB-4">ROB-4</option>
+                        <option value="ROB-5">ROB-5</option>
+                    </select>
+
+                    <textarea id="annMessage" class="textarea-input" rows="5"
+                        placeholder="Write announcement..."></textarea>
+
+                    <button class="btn-action" onclick="postAnnouncement()">
+                        Broadcast Message
+                    </button>
                 </div>
             </section>
 
             <section id="view-booking" class="page-section">
                 <div class="card">
-                    <div class="card-header"><i class="ri-door-open-line"></i> Resource Management</div>
-                    <div style="background: #f0fdf4; padding: 20px; border-radius: 15px; border: 1px solid #dcfce7; display: flex; justify-content: space-between; align-items: center;">
-                        <span>Seminar Hall A (D-Block)</span>
-                        <strong style="color: var(--green);">● AVAILABLE</strong>
+                    <div class="card-header">
+                        <i class="ri-door-open-line"></i> Classrooms
                     </div>
-                    <button class="btn-action" style="margin-top: 20px; background: #475569;">Request New Room Booking</button>
+
+                    <div id="facultyRooms" class="room-grid"></div>
                 </div>
             </section>
 
             <section id="view-timetable" class="page-section">
-                <div class="card">
-                    <div class="card-header"><i class="ri-calendar-2-line"></i> Faculty Timetable</div>
-                    <div style="background: #f0f9ff; padding: 18px; border-radius: 15px; margin-bottom: 12px; border-left: 5px solid #0ea5e9;">
-                        <strong style="color: #0369a1;">09:00 AM - 10:30 AM</strong>
-                        <p style="font-size: 14px; font-weight: 600;">Advanced Mathematics (Room D101)</p>
+                <section id="view-timetable" class="page-section">
+                    <div class="card">
+                        <h2>Faculty Weekly Timetable</h2>
+                        <div id="weeklyGrid" class="weekly-wrapper"></div>
                     </div>
-                    <div style="background: #fdf2f8; padding: 18px; border-radius: 15px; border-left: 5px solid #db2777;">
-                        <strong style="color: #9d174d;">11:00 AM - 12:30 PM</strong>
-                        <p style="font-size: 14px; font-weight: 600;">Python Lab (Lab D204)</p>
-                    </div>
-                </div>
+                </section>
+                <button class="btn-action" onclick="openExtraModal()">
+                    Add Extra Class
+                </button>
             </section>
 
         </main>
     </div>
 
+    <div id="facultyBookingModal" class="modal">
+        <div class="modal-card">
+
+            <div class="modal-header">
+                <h2>Register Classroom</h2>
+                <span class="close-btn" onclick="closeFacultyModal()">×</span>
+            </div>
+
+            <p class="modal-sub">Faculty priority booking</p>
+
+            <div class="form-grid">
+
+                <div>
+                    <label>Room</label>
+                    <input id="facRoom" disabled />
+                </div>
+
+                <div>
+                    <label>Type</label>
+                    <select id="facType">
+                        <option>Lecture</option>
+                        <option>Extra Class</option>
+                        <option>Lab</option>
+                    </select>
+                </div>
+
+                <div class="full">
+                    <label>Title</label>
+                    <input id="facTitle" placeholder="e.g. DSA Extra Class" />
+                </div>
+
+                <select id="facSlot"></select>
+
+                <div class="full">
+                    <label>Description</label>
+                    <textarea id="facDesc"></textarea>
+                </div>
+
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeFacultyModal()">Cancel</button>
+                <button class="btn-submit" onclick="confirmFacultyBooking()">Submit</button>
+            </div>
+
+            <!-- Room (already selected) -->
+            <input id="facRoom" disabled />
+
+            <!-- Day selection -->
+            <select id="facDay" onchange="loadFacultySlots()">
+                <option value="">Select Day</option>
+                <option value="Tuesday">Tuesday</option>
+                <option value="Wednesday">Wednesday</option>
+                <option value="Thursday">Thursday</option>
+                <option value="Friday">Friday</option>
+            </select>
+
+            <!-- Slot selection -->
+            <select id="facSlot">
+                <option>Select day first</option>
+            </select>
+
+        </div>
+    </div>
+
     <script>
         // Attendance Toggle Logic
+        let facultyTimetable = {}
+        const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+
         function toggleAttendance(btn) {
-            if(btn.innerText === 'PRESENT') {
+            if (btn.innerText === 'PRESENT') {
                 btn.innerText = 'ABSENT';
                 btn.style.background = '#fee2e2';
                 btn.style.color = '#991b1b';
@@ -239,20 +1059,746 @@
             const now = new Date();
             const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
             const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-            
-            if(document.getElementById('live-clock')) document.getElementById('live-clock').innerText = timeStr;
-            if(document.getElementById('live-date')) document.getElementById('live-date').innerText = dateStr;
+
+            if (document.getElementById('live-clock')) document.getElementById('live-clock').innerText = timeStr;
+            if (document.getElementById('live-date')) document.getElementById('live-date').innerText = dateStr;
+
+            const name = localStorage.getItem('name');
 
             const hour = now.getHours();
             const greetingEl = document.getElementById('dynamic-greeting');
-            if (hour < 12) greetingEl.innerText = "Good Morning, Professor!";
-            else if (hour < 17) greetingEl.innerText = "Good Afternoon, Professor!";
-            else if (hour < 21) greetingEl.innerText = "Good Evening, Professor!";
-            else greetingEl.innerText = "Good Night, Professor!";
+            const loguser = document.getElementById('loguser');
+            loguser.innerText = name
+            if (name) {
+                if (hour < 12) greetingEl.innerText = "Good Morning, " + name;
+                else if (hour < 17) greetingEl.innerText = "Good Afternoon, " + name;
+                else if (hour < 21) greetingEl.innerText = "Good Evening, " + name;
+                else greetingEl.innerText = "Good Night, " + name;
+            } else {
+                window.location.href = "/";
+            }
         }
-        
+
         setInterval(updateClock, 1000);
         updateClock();
+
+        function logout() {
+            const rollno = localStorage.getItem('rollno');
+            const name = localStorage.getItem('name');
+
+            if (rollno) {
+                localStorage.clear();
+                window.location.href = "/";
+            } else {
+                window.location.href = "/";
+            }
+        }
+
+
+        async function loadFacultyTimetable() {
+            try {
+                const teacher = localStorage.getItem("name")
+
+                const res = await fetch(`/faculty-timetable?teacher=${teacher}`)
+                const data = await res.json()
+
+                console.log("FACULTY TT:", data)
+                facultyTimetable = data
+
+                renderFacultyWeekly(data)
+                renderFacultyToday(data)
+
+            } catch (err) {
+                console.error("Faculty timetable error:", err)
+            }
+        }
+
+        const timeSlots = [
+            ["09:10", "10:00"],
+            ["10:05", "10:55"],
+            ["11:00", "11:50"],
+            ["11:50", "12:40"],
+            ["12:40", "13:30"],
+            ["13:30", "14:20"],
+            ["14:20", "15:10"],
+            ["15:10", "16:00"]
+        ]
+
+        function getCurrentLecture() {
+
+            const DEV_MODE = true   // 🔥 toggle this
+
+            if (DEV_MODE) return 4  // 👈 force lecture 3
+
+            const now = new Date()
+            const currentTime = now.getHours() * 60 + now.getMinutes()
+
+            for (let i = 0; i < timeSlots.length; i++) {
+                const [start, end] = timeSlots[i]
+
+                const [sh, sm] = start.split(":").map(Number)
+                const [eh, em] = end.split(":").map(Number)
+
+                const startMin = sh * 60 + sm
+                const endMin = eh * 60 + em
+
+                if (currentTime >= startMin && currentTime <= endMin) {
+                    return i + 1
+                }
+            }
+
+            return null
+
+
+        }
+
+        function getTodayName() {
+            // const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+            // return days[new Date().getDay()]
+            return "Monday"
+        }
+
+        function renderFacultyToday(data) {
+            const container = document.getElementById("facultyToday")
+            container.innerHTML = ""
+
+            const today = getTodayName()
+            const currentLecture = getCurrentLecture()
+
+
+            for (let i = 1; i <= 8; i++) {
+
+                const isPast = i < currentLecture
+                const isCurrent = i === currentLecture
+                const card = document.createElement("div")
+                card.className = "today-card"
+
+                const lecture = data[today]?.[i]
+
+                const subject = lecture?.subject || "Free"
+                const section = lecture?.section || ""
+                const room = lecture?.room || ""
+
+                const time = timeSlots[i - 1]
+
+                // if (lecture?.cancelled || lecture?.globalCancelled) {
+                //     slot.className = "class-item cancelled-slot"
+
+                //     slot.innerHTML = `
+                //         <div style="color:#991b1b;font-weight:700;">
+                //             ❌ Cancelled
+                //         </div>
+                //     `
+
+                //     return
+                // }
+
+                card.innerHTML = `
+                    <div class="today-subject">${subject}</div>
+                    <div class="today-teacher">${section ? "Section " + section : ""}</div>
+                    <div class="today-time">${time[0]} - ${time[1]}</div>
+                    <div class="today-time">Room ${room}</div>
+
+                    `
+                // ${lecture && !lecture.cancelled && !isPast && !isCurrent ? `
+                //     <button class="btn-cancel"
+                //         onclick="cancelClass('${today}', ${i}, '${lecture.section}')">
+                //         Cancel
+                //     </button>
+                // ` : ""}
+
+                if (lecture) card.classList.add("has-class")
+
+                if (i === currentLecture) {
+                    card.classList.add("current-card")
+                }
+
+                container.appendChild(card)
+            }
+        }
+
+        function renderFacultyWeekly(data = {}) {
+            const container = document.getElementById("weeklyGrid")
+            if (!container) return
+
+            container.innerHTML = ""
+
+            const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+
+            days.forEach(day => {
+                const card = document.createElement("div")
+                card.className = "day-card"
+
+                const header = document.createElement("div")
+                header.className = "day-header"
+                header.innerText = day
+
+                const body = document.createElement("div")
+                body.className = "day-body"
+
+                for (let i = 1; i <= 8; i++) {
+                    const slot = document.createElement("div")
+                    const lecture = data[day]?.[i]
+                    // if (lecture?.cancelled || lecture?.globalCancelled) {
+                    //     slot.className = "class-item cancelled-slot"
+
+                    //     slot.innerHTML = `
+                    //         <div style="color:#991b1b;font-weight:700;">
+                    //             ❌ Cancelled
+                    //         </div>
+                    //     `
+
+                    //     return
+                    // }
+
+                    if (lecture) {
+                        slot.className = "class-item busy"
+                        slot.innerHTML = `
+                            <div class="class-subject">
+                                ${lecture.subject}
+                                ${lecture.isExtra ? '<span style="color:#a855f7;font-size:10px;"> EXTRA</span>' : ''}
+                            </div>
+
+                            <div class="class-teacher">
+                                ${lecture.section ? "Section " + lecture.section : ""}
+                            </div>
+
+                            <div class="class-time">Room ${lecture.room || ""}</div>
+
+                            `
+                        // ${!lecture.cancelled ? `
+                        //     <button class="btn-cancel"
+                        //         onclick="cancelClass('${day}', ${i}, '${lecture.section}', this)">
+                        //         Cancel
+                        //     </button>
+                        // ` : ""}
+                    } else {
+                        slot.className = "class-item free"
+                        slot.innerHTML = `<div class="class-subject">Free</div>`
+                    }
+
+                    body.appendChild(slot)
+                }
+
+                card.appendChild(header)
+                card.appendChild(body)
+                container.appendChild(card)
+            })
+        }
+
+        loadFacultyTimetable()
+
+        async function generateQR() {
+            const res = await fetch(
+                `/generate-attendance-token?subject_code=${currentLectureData.subject_code}&lecture=${currentLectureData.lecture}`
+            )
+
+            const data = await res.json()
+
+            currentToken = data.token
+
+            new QRious({
+                element: document.getElementById('qrCanvas'),
+                value: currentToken,
+                size: 220
+            })
+        }
+
+        let qrInterval
+
+        function startQRLoop() {
+            generateQR()
+
+            qrInterval = setInterval(() => {
+                generateQR()
+            }, 2000) // every 5 sec
+        }
+
+        let currentToken = null
+        let currentLectureData = {}
+
+        function closeQR() {
+            document.getElementById("qrModal").style.display = "none"
+            clearInterval(qrInterval)
+        }
+
+        async function startAttendance(day, lectureNumber) {
+
+            const lecture = facultyTimetable?.[day]?.[lectureNumber]
+
+            if (!lecture || !lecture.subject_code) {
+                alert("Invalid lecture ❌")
+                return
+            }
+
+            currentLectureData = {
+                subject_code: lecture.subject_code,
+                lecture: lectureNumber,
+                section: lecture.section
+            }
+
+            document.getElementById("qrModal").style.display = "flex"
+            document.getElementById("qrTitle").innerText =
+                `${lecture.subject} (${lecture.section})`
+
+            startQRLoop()
+        }
+
+        function handleStartAttendance() {
+            const day = getTodayName()
+            const lectureNumber = getCurrentLecture()
+
+            console.log("BRIDGE:", day, lectureNumber)
+
+            if (!lectureNumber) {
+                alert("No active lecture ❌")
+                return
+            }
+
+            startAttendance(day, lectureNumber)
+        }
+
+
+        const socket = io("/")
+
+        let count = 0
+
+        const list = document.getElementById("liveList")
+        const counter = document.getElementById("liveCount")
+
+        // 🔥 INITIAL LOAD
+        socket.on("initial-data", data => {
+            list.innerHTML = ""
+            count = 0
+
+            data.forEach(addStudent)
+        })
+
+        // 🔥 LIVE UPDATE
+        socket.on("new-attendance", student => {
+            addStudent(student)
+
+            // optional vibration
+            if (navigator.vibrate) navigator.vibrate(100)
+        })
+
+        // 🔥 RESET
+        socket.on("reset", () => {
+            list.innerHTML = ""
+            count = 0
+            counter.innerText = "0 Students"
+        })
+
+        function addStudent(s) {
+            count++
+
+            const div = document.createElement("div")
+            div.className = "student-card"
+
+            div.innerHTML = `
+        <span style="margin-right:10px;">👤 ${s.students.name}</span> 
+        <span>${s.student_id}</span>
+    `
+
+
+            list.prepend(div)
+
+            counter.innerText = `${count} Students`
+        }
+        async function refreshAttendance() {
+            try {
+                const res = await fetch("/refresh-attendance", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        subject_code: currentLectureData.subject_code,
+                        lecture: currentLectureData.lecture
+                    })
+                })
+
+                const data = await res.json()
+
+                if (!data.success) return
+
+                // 🔥 reset UI
+                list.innerHTML = ""
+                count = 0
+
+                // 🔥 load fresh DB data
+                data.data.forEach(addStudent)
+
+            } catch (err) {
+                console.error("Refresh error:", err)
+            }
+        }
+        async function loadFacultyRooms() {
+            const res = await fetch("/free-rooms")
+            const data = await res.json()
+
+            const name = localStorage.getItem("name")
+
+            // 🔥 get active booking
+            const activeRes = await fetch(`/faculty-active-bookings?name=${name}`)
+            const active = await activeRes.json()
+
+            const container = document.getElementById("facultyRooms")
+            container.innerHTML = ""
+
+            data.freeRooms.forEach(room => {
+
+                // ❌ skip if already booked by this faculty
+                if (active && room.room_code === active.room_code) return
+
+                const div = document.createElement("div")
+                div.className = "room-card"
+
+                div.innerHTML = `
+            <div style="display:flex; justify-content:space-between;">
+                <strong>${room.room_code}</strong>
+                <span style="color:var(--green)">● Free</span>
+            </div>
+            <p style="font-size:12px; color:gray; margin-bottom:15px">Science Block</p>
+
+            <div style="font-size:12px; color:#475569">
+                👤 60 seats • 📽️ Projector • ❄️ AC
+            </div>
+
+            <button class="btn-book"
+                onclick="openFacultyModal('${room.room_code}')">
+                Register Room
+            </button>
+        `
+
+                container.appendChild(div)
+            })
+        }
+        async function bookFacultyRoom(room_code) {
+            const start = prompt("Start Lecture (1-8)")
+            const end = prompt("End Lecture (1-8)")
+            const purpose = prompt("Purpose")
+
+            if (!start || !end) return
+
+            const res = await fetch("/faculty-book-room", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    room_code,
+                    day: "Monday",
+                    start_lecture: Number(start),
+                    end_lecture: Number(end),
+                    faculty_name: localStorage.getItem("name"),
+                    purpose
+                })
+            })
+
+            const data = await res.json()
+
+            if (data.success) {
+                closeFacultyModal()
+                loadFacultyRooms()     // remove from list
+                loadActiveBooking()    // show in active // 🔥 refresh instantly
+                alert("Room Registered ✅")
+            } else {
+                alert(data.message || "Failed ❌")
+            }
+        }
+        document.querySelector(".nav-rooms").addEventListener("click", () => {
+            setTimeout(loadFacultyRooms, 100)
+        })
+        async function openFacultyModal(room) {
+            document.getElementById("facRoom").value = room
+
+            const day = "Monday"
+
+            const res = await fetch(`/available-slots?room_code=${room}&day=${day}`)
+            const data = await res.json()
+
+            const slotSelect = document.getElementById("facSlot")
+            slotSelect.innerHTML = ""
+
+            data.slots.forEach(([start, end]) => {
+
+                const startTime = timeSlots[start - 1][0]
+                const endTime = timeSlots[end - 1][1]
+
+                const opt = document.createElement("option")
+                opt.value = `${start}-${end}`
+                opt.innerText = `${startTime} - ${endTime}`
+
+                slotSelect.appendChild(opt)
+            })
+
+            document.getElementById("facultyBookingModal").style.display = "flex"
+        }
+        function closeFacultyModal() {
+            document.getElementById("facultyBookingModal").style.display = "none"
+        }
+
+        async function confirmFacultyBooking() {
+            const room_code = document.getElementById("facRoom").value
+            const slot = document.getElementById("facSlot").value
+            const purpose = document.getElementById("facTitle").value
+
+            if (!slot) return alert("Select slot")
+
+            const [start_lecture, end_lecture] = slot.split("-").map(Number)
+
+            const res = await fetch("/faculty-book-room", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    room_code,
+                    day: "Monday",
+                    start_lecture,
+                    end_lecture,
+                    faculty_name: localStorage.getItem("name"),
+                    purpose
+                })
+            })
+
+            const data = await res.json()
+
+            if (data.success) {
+                alert("Room Registered ✅")
+                closeFacultyModal()
+                loadFacultyRooms() // refresh
+            } else {
+                alert(data.message || "Failed ❌")
+            }
+        }
+        document.querySelector(".nav-rooms").addEventListener("click", () => {
+            setTimeout(loadFacultyRooms, 100)
+        })
+        async function loadActiveBooking() {
+            const name = localStorage.getItem("name")
+
+            const res = await fetch(`/faculty-active-bookings?name=${name}`)
+            const data = await res.json()
+
+            const container = document.getElementById("activeBookingCard")
+
+            if (!data) {
+                container.innerHTML = `
+            <div style="padding:20px; border:1px dashed #cbd5e1; border-radius:12px;">
+                No active booking
+            </div>
+        `
+                return
+            }
+            const startTime = timeSlots[data.start_lecture - 1][0]
+            const endTime = timeSlots[data.end_lecture - 1][1]
+
+            const timeText = `${startTime} - ${endTime}`
+
+            container.innerHTML = `
+        <div style="
+            padding: 20px;
+            border-radius: 15px;
+            background: #fdf4ff;
+            border-left: 5px solid #d946ef;
+        ">
+            <strong style="color:#a21caf; font-size:18px;">
+                ${data.room_code}
+            </strong>
+
+            <p style="font-size:13px; margin-top:5px;">
+                ${data.purpose}
+            </p>
+
+            <p style="font-size:12px; color:gray;">
+                Lecture ${timeText}
+            </p>
+        </div>
+    `
+        }
+        loadActiveBooking()
+
+        async function postAnnouncement() {
+            const message = document.getElementById("annMessage").value
+            const section = document.getElementById("annSection").value
+            const faculty_name = localStorage.getItem("name")
+
+            if (!message) return alert("Write something")
+
+            const res = await fetch("/post-announcement", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    message,
+                    section,
+                    faculty_name
+                })
+            })
+
+            const data = await res.json()
+
+            if (data.success) {
+                alert("Announcement sent ✅")
+                document.getElementById("annMessage").value = ""
+            } else {
+                alert("Failed ❌")
+            }
+        }
+        async function cancelClass(day, lecture, section, btn) {
+
+            const today = getTodayName()
+            const currentLecture = getCurrentLecture()
+
+            // ❌ block past/current
+            if (day === today && lecture <= currentLecture) {
+                return alert("Cannot cancel past or ongoing lecture ❌")
+            }
+
+            const confirmAction = confirm(`Cancel ${day} Lecture ${lecture}?`)
+            if (!confirmAction) return
+
+            // 🔥 UI UPDATE IMMEDIATELY
+            btn.disabled = true
+            btn.innerText = "Cancelling..."
+
+            const card = btn.closest(".today-card, .class-item")
+
+            if (card) {
+                card.style.background = "#e5e7eb"
+                card.style.opacity = "0.7"
+            }
+
+            try {
+                const res = await fetch("/cancel-class", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        section,
+                        day,
+                        lecture,
+                        faculty_name: localStorage.getItem("name")
+                    })
+                })
+
+                const data = await res.json()
+
+                if (data.success) {
+
+                    // 🔥 FINAL STATE
+                    if (card) {
+                        card.innerHTML = `
+                    <div style="color:#991b1b;font-weight:700;">
+                        ❌ Cancelled
+                    </div>
+                `
+                    }
+
+                } else {
+                    alert(data.message || "Failed ❌")
+
+                    // 🔄 revert UI if failed
+                    btn.disabled = false
+                    btn.innerText = "Cancel"
+
+                    if (card) {
+                        card.style.background = ""
+                        card.style.opacity = ""
+                    }
+                }
+                card.classList.add("cancelled-slot")
+
+            } catch (err) {
+                console.error(err)
+
+                btn.disabled = false
+                btn.innerText = "Cancel"
+            }
+        }
+        async function loadExtraSlots() {
+
+            const room = document.getElementById("modalRoom").value
+            const day = document.getElementById("extraDay").value
+
+            const res = await fetch(`/available-slots?room_code=${room}&day=${day}`)
+            const data = await res.json()
+
+            const slotSelect = document.getElementById("extraSlot")
+            slotSelect.innerHTML = ""
+
+            data.slots.forEach(([start, end]) => {
+                const opt = document.createElement("option")
+                opt.value = `${start}-${end}`
+                opt.innerText = `Lecture ${start} - ${end}`
+                slotSelect.appendChild(opt)
+            })
+        }
+        async function confirmExtraClass() {
+
+            const room_code = document.getElementById("modalRoom").value
+            const day = document.getElementById("extraDay").value
+            const slot = document.getElementById("extraSlot").value
+
+            const [start_lecture, end_lecture] = slot.split("-").map(Number)
+
+            const res = await fetch("/add-extra-class", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    section: localStorage.getItem("section"),
+                    subject_code: "AUTO", // we fix below 👇
+                    faculty_name: localStorage.getItem("name"),
+                    day,
+                    start_lecture,
+                    end_lecture,
+                    room_code,
+                    purpose: "Extra Class"
+                })
+            })
+
+            const data = await res.json()
+
+            if (data.success) {
+                alert("Extra Class Added 🟣")
+                closeModal()
+                loadFacultyTimetable()
+            } else {
+                alert(data.message || "Failed ❌")
+            }
+        }
+        async function loadExtraSlots() {
+
+            const room = document.getElementById("extraRoom").value
+            const day = document.getElementById("extraDay").value
+
+            if (!room || !day) return
+
+            const res = await fetch(`/available-slots?room_code=${room}&day=${day}`)
+            const data = await res.json()
+
+            const slotSelect = document.getElementById("extraSlot")
+            slotSelect.innerHTML = ""
+
+            data.slots.forEach(([start, end]) => {
+                const opt = document.createElement("option")
+                opt.value = `${start}-${end}`
+                opt.innerText = `Lecture ${start} - ${end}`
+                slotSelect.appendChild(opt)
+            })
+        }
+        socket.on("timetable:update", (data) => {
+            loadFacultyTimetable()
+
+        })
+        socket.on("announcement", (data) => {
+            if (data.section === localStorage.getItem("section")) {
+                showToast(data.message)
+            }
+        })
     </script>
 </body>
+
 </html>

@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Unispace | Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <style>
         :root {
             --primary: #2563eb;
@@ -266,6 +268,711 @@
             cursor: pointer;
             font-weight: 600;
         }
+
+        /* 🔷 TODAY GRID */
+        .today-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+        }
+
+        /* 💎 CARD LIKE ROOM BOX */
+        .today-card {
+            background: #ecfdf5;
+            border: 2px solid #bbf7d0;
+            border-radius: 16px;
+            padding: 18px;
+            text-align: center;
+            transition: 0.25s;
+        }
+
+        .has-class {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            border: none;
+            color: white;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+        }
+
+        .has-class .today-subject {
+            color: rgb(26, 25, 25);
+        }
+
+        .has-class .today-teacher {
+            color: rgba(20, 19, 19, 0.85);
+        }
+
+        .has-class .today-time {
+            background: rgba(255, 255, 255, 0.2);
+            color: rgb(29, 28, 28);
+        }
+
+        .today-card:hover {
+            transform: translateY(-5px);
+        }
+
+        /* 🟨 CURRENT */
+        .current-card {
+            border: 2px solid #c4a114;
+            background: #fef9c3;
+        }
+
+        /* 🔤 SUBJECT */
+        .today-subject {
+            font-size: 15px;
+            font-weight: 700;
+            color: #065f46;
+        }
+
+        /* 👨‍🏫 TEACHER */
+        .today-teacher {
+            font-size: 12px;
+            margin-top: 6px;
+            color: #047857;
+        }
+
+        /* ⏰ TIME */
+        .today-time {
+            margin-top: 8px;
+            font-size: 12px;
+            background: #bbf7d0;
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        /* 🌍 WEEK GRID */
+        .weekly-wrapper {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            padding: 10px;
+
+        }
+
+        /* 📦 EACH DAY */
+        .day-card {
+            background: #ffffff;
+            border-radius: 16px;
+            margin: 5px;
+            padding: 10px;
+            border: 2px solid #33a4f0;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+
+        }
+
+        /* 🏷 DAY TITLE */
+        .day-header {
+            text-align: center;
+            font-weight: 600;
+            font-size: 13px;
+            margin-bottom: 8px;
+            color: #1e293b;
+        }
+
+        /* 📚 GRID INSIDE DAY (LIKE TODAY UI) */
+        .day-body {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            /* 2 cards per row */
+            gap: 6px;
+        }
+
+        /* 🎴 CARD (SAME AS TODAY STYLE) */
+        .class-item {
+            border-radius: 12px;
+            padding: 6px;
+            text-align: center;
+            font-size: 10px;
+        }
+
+        /* 🔵 BUSY */
+        .class-item.busy {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+        }
+
+        /* 🟢 FREE */
+        .class-item.free {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+        }
+
+        /* 🕒 TIME */
+        .class-time {
+            font-size: 9px;
+            opacity: 0.8;
+        }
+
+        /* 📖 SUBJECT */
+        .class-subject {
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        /* 👨‍🏫 */
+        .class-teacher {
+            font-size: 9px;
+            opacity: 0.85;
+        }
+
+        /*  */
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #1e293b;
+            color: white;
+            padding: 12px 18px;
+            border-radius: 10px;
+            font-size: 13px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: 0.3s;
+            z-index: 999;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast.success {
+            background: #22c55e;
+        }
+
+        .toast.error {
+            background: #ef4444;
+        }
+
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+        }
+
+        .modal-card {
+            background: #fff;
+            width: 420px;
+            border-radius: 18px;
+            padding: 25px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+            animation: fadeIn 0.25s ease;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 18px;
+            color: var(--navy);
+        }
+
+        .close-btn {
+            cursor: pointer;
+            font-size: 20px;
+            color: #05295c;
+        }
+
+        .modal-sub {
+            font-size: 12px;
+            color: #64748b;
+            margin: 10px 0 20px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .form-grid .full {
+            grid-column: span 2;
+        }
+
+        .form-grid label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .form-grid input,
+        .form-grid select,
+        .form-grid textarea {
+            width: 100%;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            margin-top: 5px;
+            font-size: 13px;
+        }
+
+        textarea {
+            resize: none;
+            height: 70px;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-cancel {
+            background: #042e65;
+            padding: 10px 14px;
+            border-radius: 10px;
+        }
+
+        .btn-submit {
+            background: var(--primary);
+            color: white;
+            padding: 10px 16px;
+            border-radius: 10px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /*  */
+        /*  */
+        .booking-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .booking-date {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .booking-status {
+            background: #e2e8f0;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+        }
+
+        /*  */
+        .booking-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .booking-date {
+            font-size: 11px;
+            color: #64748b;
+        }
+
+        .booking-status {
+            background: #e0e7ff;
+            color: #4338ca;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        /*  */
+        .scanner-card {
+            width: 340px;
+            background: #fff;
+            border-radius: 20px;
+            padding: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-top: 15px;
+        }
+
+        .scanner-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        #reader {
+            width: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .zoom-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .zoom-control button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .zoom-control input {
+            flex: 1;
+        }
+
+        #scanStatus {
+            margin-top: 10px;
+            font-size: 13px;
+            color: gray;
+            text-align: center;
+        }
+
+        .close-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: rgb(7, 47, 110);
+            font-size: 18px;
+            padding: 6px 10px;
+            border-radius: 10px;
+        }
+
+        .scan-btn {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: white;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 6px 15px rgba(37, 99, 235, 0.3);
+            transition: 0.2s;
+        }
+
+        .scan-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        /*  */
+        @media (max-width: 768px) {
+
+            body {
+                overflow: auto;
+            }
+
+            .app-container {
+                flex-direction: column;
+            }
+
+            /* 🔥 Sidebar becomes top nav */
+            .sidebar {
+                width: 100%;
+                height: auto;
+                flex-direction: row;
+                overflow-x: auto;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .nav-menu {
+                display: flex;
+                gap: 10px;
+                padding: 10px;
+            }
+
+            .nav-item {
+                white-space: nowrap;
+                padding: 10px;
+                font-size: 13px;
+            }
+
+            .main-content {
+                padding: 15px;
+            }
+
+            /* 🔥 Grid stack */
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .today-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .weekly-wrapper {
+                grid-template-columns: 1fr;
+            }
+
+            /* 🔥 Scanner FULL WIDTH */
+            .scanner-card {
+                width: 100%;
+                max-width: 420px;
+                background: rgba(255, 255, 255, 0.08);
+                border-radius: 24px;
+                padding: 16px;
+                backdrop-filter: blur(20px);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            #reader {
+                width: 100%;
+                height: 320px;
+                border-radius: 16px;
+                overflow: hidden;
+                position: relative;
+            }
+
+            /* 🔥 Bigger buttons (touch friendly) */
+            .scan-btn,
+            .btn-book,
+            .btn-submit {
+                width: 100%;
+                padding: 14px;
+                font-size: 16px;
+            }
+
+            /* 🔥 Zoom control spacing */
+            .zoom-control {
+                gap: 8px;
+            }
+
+            .zoom-control button {
+                padding: 10px;
+                font-size: 18px;
+            }
+
+            /* 🔥 Modal full screen */
+            .modal-card {
+                width: 95%;
+                border-radius: 14px;
+            }
+        }
+
+        /*  */
+
+        .scanner-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.75);
+            /* dark glass */
+            backdrop-filter: blur(12px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+
+            opacity: 0;
+            pointer-events: none;
+            transition: 0.3s ease;
+        }
+
+        .scanner-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        button {
+            touch-action: manipulation;
+        }
+
+        html,
+        body {
+            height: 100%;
+            overflow-x: hidden;
+        }
+
+        @media (max-width: 480px) {
+            .today-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .card {
+                padding: 16px;
+            }
+
+            .page-header h1 {
+                font-size: 22px;
+            }
+        }
+
+        .scan-frame {
+            position: absolute;
+            inset: 0;
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            border-radius: 16px;
+        }
+
+        .scan-line {
+            position: absolute;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #22c55e, transparent);
+            animation: scanMove 2s linear infinite;
+        }
+
+        @keyframes scanMove {
+            0% {
+                top: 0;
+            }
+
+            100% {
+                top: 100%;
+            }
+        }
+
+        .today-room {
+            color: #020c1c;
+            font-weight: bold;
+        }
+
+        .annc-card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 16px 18px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+            max-width: 420px;
+            font-family: system-ui, sans-serif;
+        }
+
+        .annc-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            color: #1e293b;
+            margin-bottom: 12px;
+        }
+
+        .icon {
+            font-size: 18px;
+        }
+
+        .annc-empty {
+            text-align: center;
+            padding: 20px 10px;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        .annc-empty p {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 500;
+            color: #334155;
+        }
+
+        .annc-empty small {
+            color: #94a3b8;
+            font-size: 12px;
+        }
+
+        .annc-item {
+            padding: 10px 0;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        .annc-item strong {
+            font-size: 14px;
+            color: #0f172a;
+        }
+
+        .annc-item p {
+            margin: 4px 0 0;
+            font-size: 13px;
+            color: #475569;
+        }
+
+        .att-card {
+            background: #f3f4f6;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 10px;
+        }
+
+        #dailyAttendance .att-card {
+            display: none;
+            background: #dbeafe;
+        }
+
+        .att-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .att-modern-card {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            color: white;
+            padding: 16px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            transition: 0.25s;
+        }
+
+        .att-modern-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .att-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .att-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: #2563eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .att-percent {
+            font-weight: 700;
+        }
+
+        .att-bar-bg {
+            background: rgba(255, 255, 255, 0.1);
+            height: 6px;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+
+        .att-bar-fill {
+            height: 100%;
+            border-radius: 10px;
+            background: linear-gradient(90deg, #3b82f6, #60a5fa);
+        }
     </style>
 </head>
 
@@ -290,13 +997,13 @@
                 <label for="tab-dash" class="nav-item nav-dash"><i class="ri-layout-grid-fill"></i> Dashboard</label>
                 <label for="tab-att" class="nav-item nav-att"><i class="ri-checkbox-circle-line"></i> Attendance</label>
                 <label for="tab-time" class="nav-item nav-time"><i class="ri-calendar-event-line"></i> Timetable</label>
-                <label for="tab-map" class="nav-item nav-map"><i class="ri-map-2-line"></i> Map</label>
+                <!-- <label for="tab-map" class="nav-item nav-map"><i class="ri-map-2-line"></i> Map</label> -->
                 <label for="tab-rooms" class="nav-item nav-rooms"><i class="ri-door-open-line"></i> Classrooms</label>
             </nav>
             <div class="sidebar-footer">
                 <div class="user-pill">
                     <div class="user-img"><i class="ri-user-line"></i></div>
-                    <span>Student</span>
+                    <span id="loguser">Student</span>
                     <i class="ri-logout-box-r-line logout-btn" onclick="logout()"
                         style="margin-left:auto; cursor:pointer"></i>
                 </div>
@@ -321,14 +1028,16 @@
                             <div id="todaySchedule" class="today-grid"></div>
                         </div>
                         <div class="card">
-                            <div class="card-header"><i class="ri-megaphone-line"></i> Announcements</div>
-                            <div style="padding-bottom:10px; border-bottom:1px solid #f1f5f9; margin-bottom:10px">
-                                <strong style="font-size:14px">Semester End Exam Dates</strong>
-                                <p style="font-size:12px; color:gray">Schedule released for B.Tech CSE 1st Year.</p>
-                            </div>
-                            <div>
-                                <strong style="font-size:14px">Industrial Visit</strong>
-                                <p style="font-size:12px; color:gray">TCS Visit confirmed for next Friday.</p>
+                            <div id="announcementList" class="annc-card">
+                                <div class="annc-header">
+                                    <span class="icon">📣</span>
+                                    <span>Announcements</span>
+                                </div>
+
+                                <div class="annc-empty">
+                                    <p>No announcements yet</p>
+                                    <small>You're all caught up 🎉</small>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -339,31 +1048,43 @@
                                 <div class="att-val">79%</div>
                                 <p style="font-size:12px; color:#64748b">Overall Attendance</p>
                             </div>
-                            <div class="prog-row">
-                                <div class="prog-labels"><span>Computational Mathematics</span> <span
-                                        style="color:#ef4444">64%</span></div>
-                                <div class="prog-bg">
-                                    <div class="prog-fill" style="width:64%; background:#ef4444"></div>
-                                </div>
-                            </div>
-                            <div class="prog-row">
-                                <div class="prog-labels"><span>Python Programming</span> <span>89%</span></div>
-                                <div class="prog-bg">
-                                    <div class="prog-fill" style="width:89%"></div>
+                            <button class="scan-btn" onclick="startScannerUI()">
+                                📷 Scan Attendance
+                            </button>
+
+                            <div id="scannerWrapper" class="scanner-overlay">
+                                <div class="scanner-card">
+                                    <div class="scanner-header">
+                                        <span>📷 Scan Attendance</span>
+                                        <button onclick="stopScannerUI()" class="close-btn">✖</button>
+                                    </div>
+
+                                    <div id="reader">
+                                        <div class="scan-frame"></div>
+                                        <div class="scan-line"></div>
+                                    </div>
+
+                                    <div class="zoom-control">
+                                        <button onclick="changeZoom(-0.2)">−</button>
+                                        <input type="range" min="1" max="2" step="0.1" value="1" id="zoomSlider">
+                                        <button onclick="changeZoom(0.2)">+</button>
+                                    </div>
+
+                                    <div id="scanStatus">Waiting for scan...</div>
                                 </div>
                             </div>
                         </div>
-                        <!-- <div class="card">
-                            <div class="card-header"><i class="ri-notification-3-line"></i> Notifications</div>
-                            <div style="background:#fee2e2; color:#b91c1c; padding:10px; border-radius:8px; font-size:13px; margin-bottom:10px">
-                                ⚠️ Low Attendance Alert in Mathematics!
+
+                        <div class="card">
+                            <div class="card-header">Recent Bookings</div>
+                            <div id="announcementList" class="annc-card">
+                                <div class="annc-empty">
+                                    <p>No bookings yet</p>
+                                    <small>You're all caught up 🎉</small>
+                                    <div id="bookingList"></div>
+                                </div>
                             </div>
-                            <div style="background:#e0e7ff; color:#4338ca; padding:10px; border-radius:8px; font-size:13px">
-                                ℹ️ New study material uploaded for Python.
-                            </div>
-                        </div> -->
-                    </div>
-                </div>
+                        </div>
             </section>
 
             <section id="view-classrooms" class="page-section">
@@ -407,10 +1128,16 @@
             </section>
 
             <section id="view-attendance" class="page-section">
-                <div class="card">
-                    <h2>Attendance History</h2>
-                    <p>Detailed logs coming soon...</p>
-                </div>
+                <h2>Attendance</h2>
+
+                <!-- <h3 style="margin-top:15px;">📅 Daily (QR)</h3> -->
+                <div id="dailyAttendance"></div>
+
+                <h3 style="margin-top:20px;">📊 Overall</h3>
+                <div id="attendanceContainer" class="att-grid"></div>
+
+                <h3 style="margin-top:20px;">📜 History</h3>
+                <div id="attendanceList"></div>
             </section>
             <section id="view-timetable" class="page-section">
                 <div class="card">
@@ -422,27 +1149,83 @@
         </main>
     </div>
 
+    <div id="bookingModal" class="modal">
+        <div class="modal-card">
+
+            <div class="modal-header">
+                <h2>Book a Classroom</h2>
+                <span class="close-btn" onclick="closeModal()">×</span>
+            </div>
+
+            <p class="modal-sub">Request a room for extra classes or events.</p>
+
+            <div class="form-grid">
+
+                <div>
+                    <label>Room</label>
+                    <input id="modalRoom" disabled />
+                </div>
+
+                <div>
+                    <label>Type</label>
+                    <select id="typeInput">
+                        <option>Extra Class</option>
+                        <option>Meeting</option>
+                        <option>Workshop</option>
+                    </select>
+                </div>
+
+                <div class="full">
+                    <label>Title</label>
+                    <input id="titleInput" placeholder="e.g. Remedial Math Class" />
+                </div>
+
+                <select id="slotSelect"></select>
+
+                <div class="full">
+                    <label>Description</label>
+                    <textarea id="descInput" placeholder="Optional..."></textarea>
+                </div>
+
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+                <button class="btn-submit" onclick="confirmBooking()">Submit</button>
+            </div>
+
+        </div>
+    </div>
+
     <script>
+        let subjectMap = {}
+        const socket = io()
+
         function updateClock() {
             const now = new Date();
             document.getElementById('live-clock').innerText = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
             document.getElementById('live-date').innerText = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
+            const name = localStorage.getItem('name');
+
             const hour = now.getHours();
             const greetingEl = document.getElementById('dynamic-greeting');
-            const name = localStorage.getItem('name');
+            const loguser = document.getElementById('loguser');
+            loguser.innerText = name
             if (name) {
                 if (hour < 12) greetingEl.innerText = "Good Morning, " + name;
                 else if (hour < 17) greetingEl.innerText = "Good Afternoon, " + name;
                 else if (hour < 21) greetingEl.innerText = "Good Evening, " + name;
                 else greetingEl.innerText = "Good Night, " + name;
             } else {
-                window.location.href = "index.html";
+                window.location.href = "/";
             }
 
         }
         setInterval(updateClock, 1000);
         updateClock();
+
+        const role = localStorage.getItem("role")
 
         function logout() {
             const rollno = localStorage.getItem('rollno');
@@ -450,9 +1233,9 @@
 
             if (rollno) {
                 localStorage.clear();
-                window.location.href = "";
+                window.location.href = "/";
             } else {
-                window.location.href = "";
+                window.location.href = "/";
             }
         }
 
@@ -463,8 +1246,9 @@
             try {
                 const section = localStorage.getItem('section') || 'A'
 
-                const res = await fetch(`https://legendary-space-sniffle-wrqv9jq9gjq5c595x-3000.app.github.dev/timetable?section=${section}`)
+                const res = await fetch(`/timetable?section=${section}`)
                 const data = await res.json()
+
 
                 console.log("TIMETABLE DATA:", data)
 
@@ -481,8 +1265,9 @@
 
 
         function getTodayName() {
-            const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
-            return days[new Date().getDay()]
+            // const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+            // return days[new Date().getDay()]
+            return "Monday"
         }
 
         const timeSlots = [
@@ -518,6 +1303,7 @@
         }
 
 
+
         function renderToday(data) {
             const container = document.getElementById("todaySchedule")
             container.innerHTML = ""
@@ -529,17 +1315,52 @@
                 const card = document.createElement("div")
                 card.className = "today-card"
 
-                const lecture = data?.[today]?.[i]
+                const lecture = data?.[today]?.[String(i)]
 
-                const subject = lecture?.subject || "Free Lecture"
+                // 🟥 CANCELLED
+                if (lecture?.cancelled) {
+                    card.innerHTML = `
+        <div style="
+            font-weight:700;
+            color:#991b1b;
+        ">❌ Cancelled</div>
+
+        <div class="today-time">
+            ${timeSlots[i - 1][0]} - ${timeSlots[i - 1][1]}
+        </div>
+    `
+                    card.style.background = "#fee2e2"
+                    card.style.border = "2px solid #fca5a5"
+
+                    container.appendChild(card)
+                    continue
+                }
+
+                // 🟣 EXTRA BADGE
+                const extraBadge = lecture?.isExtra
+                    ? `<span style="
+        background:#a855f7;
+        color:white;
+        font-size:10px;
+        padding:2px 6px;
+        border-radius:6px;
+        margin-left:6px;
+    ">EXTRA</span>`
+                    : ""
+
+                const subject = lecture?.subject
+                    ? lecture.subject + extraBadge
+                    : "Free Lecture"
+
                 const teacher = lecture?.teacher || ""
                 const time = timeSlots[i - 1]
 
                 card.innerHTML = `
-            <div class="today-subject">${subject}</div>
-            <div class="today-teacher">${teacher}</div>
-            <div class="today-time">${time[0]} - ${time[1]}</div>
-        `
+                    <div class="today-subject">${subject}</div>
+                    <div class="today-teacher">${teacher}</div>
+                    <div class="today-room">${lecture?.room || ""}</div>
+                    <div class="today-time">${time[0]} - ${time[1]}</div>
+                `
 
                 if (lecture) card.classList.add("has-class")
 
@@ -565,19 +1386,33 @@
                 html += `<div class="day-body">`
 
                 for (let i = 1; i <= 8; i++) {
-                    const lecture = data?.[day]?.[i]
+                    const lecture = data?.[day]?.[String(i)]
 
-                    const subject = lecture?.subject || "Free"
+                    let subject = "Free"
+                    let extra = ""
+                    let cancelled = false
+
+                    if (lecture?.cancelled) {
+                        subject = "❌ Cancelled"
+                        cancelled = true
+                    } else if (lecture) {
+                        subject = lecture.subject
+                        if (lecture.isExtra) extra = " (Extra)"
+                    }
+
                     const teacher = lecture?.teacher || ""
                     const time = timeSlots[i - 1]
 
                     html += `
-                <div class="class-item ${lecture ? 'busy' : 'free'}">
-                    <div class="class-time">${time[0]}</div>
-                    <div class="class-subject">${subject}</div>
-                    <div class="class-teacher">${teacher}</div>
-                </div>
-            `
+                        <div class="class-item ${lecture ? 'busy' : 'free'}"
+                            style="${cancelled ? 'background:#fee2e2; color:#991b1b;' : ''}">
+                            
+                            <div class="class-time">${time[0]}</div>
+                            <div class="class-subject">${subject}${extra}</div>
+                            <div class="class-teacher">${teacher}</div>
+                            <div class="class-room">${lecture?.room || ""}</div>
+                        </div>
+                        `
                 }
 
                 html += `</div>`
@@ -590,7 +1425,7 @@
 
         async function loadClassrooms() {
             try {
-                const res = await fetch("https://legendary-space-sniffle-wrqv9jq9gjq5c595x-3000.app.github.dev/free-rooms")
+                const res = await fetch("/free-rooms")
                 const data = await res.json()
 
                 if (!data.success) return
@@ -609,22 +1444,588 @@
             rooms.forEach(r => {
                 const card = document.createElement("div")
                 card.className = "room-card"
+                const isAllowed = role === "student-register"
 
                 card.innerHTML = `
-            <div style="display:flex; justify-content:space-between; margin-bottom:10px">
-                <strong style="font-size:20px">${r.room_code}</strong>
-                <span style="color:var(--green); font-weight:bold; font-size:12px">● Free</span>
-            </div>
-            <p style="font-size:12px; color:gray; margin-bottom:15px">Science Block</p>
-            <div style="font-size:12px; color:#475569">👤 60 seats • 📽️ Projector • ❄️ AC</div>
-            <button class="btn-book">Register Room</button>
-        `
+                    <div style="display:flex; justify-content:space-between; margin-bottom:10px">
+                        <strong style="font-size:20px">${r.room_code}</strong>
+                        <span style="color:var(--green); font-weight:bold; font-size:12px">● Free</span>
+                    </div>
 
+                    <p style="font-size:12px; color:gray; margin-bottom:15px">Science Block</p>
+
+                    <div style="font-size:12px; color:#475569">
+                        👤 60 seats • 📽️ Projector • ❄️ AC
+                    </div>
+
+                    <button class="btn-book" 
+                        ${!isAllowed ? "disabled style='opacity:0.5; cursor:not-allowed'" : ""}
+                        onclick="openModal('${r.room_code}')">
+                        Register Room
+                    </button>
+`
                 container.appendChild(card)
             })
         }
 
         loadClassrooms()
+
+        async function handleBooking(room_code) {
+            const role = localStorage.getItem("role")
+
+            if (role !== "student-register") {
+                showToast("Not allowed", "error")
+                return
+            }
+
+            const purpose = prompt("Enter purpose")
+            if (!purpose) return
+
+            const res = await fetch("/book-room", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    room_code,
+                    day: getTodayName(), // 🔥 FIXED
+                    lecture: getCurrentLecture(),
+                    booked_by: localStorage.getItem("name"),
+                    purpose
+                })
+            })
+
+            const data = await res.json()
+
+            if (data.success) {
+                showToast("Room booked successfully 🔥")
+
+                // 🔥 instant UI update (remove booked room)
+                loadClassrooms()
+
+            } else {
+                showToast(data.message || "Booking failed", "error")
+            }
+        }
+
+        function showToast(msg, type = "success") {
+            const t = document.createElement("div")
+            t.className = `toast ${type}`
+            t.innerText = msg
+
+            document.body.appendChild(t)
+
+            setTimeout(() => t.classList.add("show"), 50)
+
+            setTimeout(() => {
+                t.classList.remove("show")
+                setTimeout(() => t.remove(), 300)
+            }, 2500)
+        }
+
+        let selectedRoom = null
+
+        async function openModal(room) {
+            selectedRoom = room
+
+            document.getElementById("modalRoom").value = room
+            document.getElementById("bookingModal").style.display = "flex"
+
+            const day = getTodayName()
+
+            const res = await fetch(`/available-slots?room_code=${room}&day=${day}`)
+            const data = await res.json()
+
+            const select = document.getElementById("slotSelect")
+            select.innerHTML = ""
+
+            if (!data.success || !data.slots) {
+                showToast("Failed to load slots", "error")
+                return
+            }
+
+            data.slots.forEach(([start, end]) => {
+                const opt = document.createElement("option")
+                opt.value = `${start}-${end}`
+                const timeSlots = [
+                    ["09:10", "10:00"],
+                    ["10:05", "10:55"],
+                    ["11:00", "11:50"],
+                    ["11:50", "12:40"],
+                    ["12:40", "13:30"],
+                    ["13:30", "14:20"],
+                    ["14:20", "15:10"],
+                    ["15:10", "16:00"]
+                ]
+
+                opt.innerText = `${timeSlots[start - 1][0]} – ${timeSlots[end - 1][1]}`
+                select.appendChild(opt)
+            })
+        }
+
+        function closeModal() {
+            document.getElementById("bookingModal").style.display = "none"
+        }
+
+        let scanned = false
+
+        function successCallback(decodedText) {
+            if (scanned) return
+
+            scanned = true
+
+            document.getElementById("scanStatus").innerText = "✅ Scanned!"
+
+            markAttendance(decodedText)
+
+            setTimeout(() => {
+                stopScanner()
+            }, 800)
+        }
+
+        async function confirmBooking() {
+            const role = localStorage.getItem("role")
+
+            if (role !== "student-register") {
+                showToast("Not allowed", "error")
+                return
+            }
+
+            const purpose = document.getElementById("titleInput").value
+            if (!purpose) {
+                showToast("Enter purpose", "error")
+                return
+            }
+
+            const slot = document.getElementById("slotSelect").value
+            const [start_lecture, end_lecture] = slot.split("-").map(Number)
+
+            const res = await fetch("/book-room", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    room_code: selectedRoom,
+                    day: getTodayName(),
+                    start_lecture,
+                    end_lecture,
+                    booked_by: localStorage.getItem("name"),
+                    purpose
+                })
+            })
+
+            const data = await res.json()
+
+            if (data.success) {
+                showToast("Room booked 🔥")
+                closeModal()
+                loadClassrooms()
+                loadBookings()
+            } else {
+                showToast(data.message || "Error", "error")
+            }
+        }
+
+        async function loadBookings() {
+            const res = await fetch("/my-bookings")
+            const data = await res.json()
+
+            const container = document.getElementById("bookingList")
+            container.innerHTML = ""
+
+            data.forEach(b => {
+                const div = document.createElement("div")
+                div.className = "booking-item"
+
+                div.innerHTML = `
+                    <div>
+                        <div class="booking-title">${b.purpose || "Room Booking"}</div>
+                        <div class="booking-date">
+                            ${b.day} • ${b.room_code}
+                        </div>
+                    </div>
+
+                    <div class="booking-status">
+                        ${b.start_lecture} → ${b.end_lecture}
+                    </div>
+                `
+
+                container.appendChild(div)
+            })
+        }
+
+        loadBookings()
+
+
+        function startScannerUI() {
+            const el = document.getElementById("scannerWrapper")
+            el.classList.add("active")
+
+            setTimeout(() => {
+                startScanner()
+            }, 200) // wait for animation
+        }
+
+        function stopScannerUI() {
+            document.getElementById("scannerWrapper").classList.remove("active")
+            stopScanner()
+        }
+
+        let scanner = null
+
+        let zoomLevel = 1
+
+        function startScanner() {
+            if (scanner) return
+
+            scanned = false
+
+            scanner = new Html5Qrcode("reader")
+
+            scanner.start(
+                { facingMode: "environment" }, // ✅ ONLY ONE KEY
+                {
+                    fps: 10,
+                    qrbox: { width: 280, height: 280 }
+                },
+                successCallback
+            )
+
+            // enhance after start
+            setTimeout(() => {
+                if (scanner) {
+                    scanner.applyVideoConstraints({
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        advanced: [
+                            { focusMode: "continuous" },
+                            { exposureMode: "continuous" }
+                        ]
+                    })
+                }
+            }, 500)
+        }
+
+        function stopScanner() {
+            if (scanner) {
+                scanner.stop().then(() => {
+                    scanner.clear()
+                    scanner = null
+                })
+            }
+        }
+
+
+
+
+
+
+        function zoomIn() {
+            zoomLevel += 1
+            document.getElementById("reader").style.transform = `scale(${zoomLevel})`
+        }
+
+        function zoomOut() {
+            zoomLevel -= 0.7
+            document.getElementById("reader").style.transform = `scale(${zoomLevel})`
+        }
+
+        function changeZoom(amount) {
+            zoomLevel = Math.min(2, Math.max(1, zoomLevel + amount))
+            document.getElementById("zoomSlider").value = zoomLevel
+            applyZoom()
+        }
+
+        document.getElementById("zoomSlider").addEventListener("input", e => {
+            zoomLevel = parseFloat(e.target.value)
+            applyZoom()
+        })
+
+        function applyZoom() {
+            const video = document.querySelector("#reader video")
+            if (video) {
+                video.style.transform = `scale(${zoomLevel})`
+            }
+        }
+
+        // function addStudentToList(student) {
+        //     const div = document.createElement("div")
+        //     div.innerText = `${student.name} • ${student.time}`
+
+        // }
+
+        async function markAttendance(token) {
+            if (!token) {
+                showToast("Invalid QR ❌", "error")
+                return
+            }
+
+            const student_id = localStorage.getItem("rollno")
+
+            if (!student_id) {
+                showToast("User not logged in ❌", "error")
+                return
+            }
+
+            try {
+                const res = await fetch("/mark-attendance", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        token,
+                        student_id
+                    })
+                })
+
+                const data = await res.json()
+
+                if (data.success) {
+                    stopScanner()
+                    showToast("Attendance marked ✅")
+
+                    // 🔥 AUTO UPDATE UI
+                    await loadSubjects()
+                    loadAttendance()
+                    loadAttendanceSummary()
+                    loadAttendanceHistory()
+
+                } else {
+                    document.getElementById("scannerWrapper").classList.remove("active")
+                    showToast(data.message || "Failed ❌", "error")
+                }
+
+            } catch (err) {
+                console.error(err)
+                document.getElementById("scannerWrapper").classList.remove("active")
+                showToast("Server error ❌", "error")
+            }
+        }
+        function applyZoom() {
+            const video = document.querySelector("#reader video")
+            if (video) {
+                video.style.transformOrigin = "center"
+                video.style.transform = `scale(${zoomLevel})`
+            }
+        }
+        async function loadAnnouncements() {
+            const section = localStorage.getItem("section");
+
+            const res = await fetch(`/announcements?section=${section}`);
+            const data = await res.json();
+
+            const annc = document.getElementById("announcementList");
+
+
+
+
+
+
+            data.forEach(a => {
+                const div = document.createElement("div");
+
+                div.innerHTML = `
+                    <div class="annc-item">
+                        <strong>${a.faculty_name}</strong>
+                        <p>${a.message}</p>
+                    </div>
+                `;
+
+                annc.appendChild(div);
+            });
+        }
+        loadAnnouncements()
+        async function loadAttendanceHistory() {
+            const student_id = localStorage.getItem("rollno")
+
+            const res = await fetch(`/attendance-history?student_id=${student_id}`)
+            const data = await res.json()
+
+            const container = document.getElementById("attendanceList")
+            container.innerHTML = ""
+
+            if (!data.length) {
+                container.innerHTML = `<p style="color:gray;">No attendance yet</p>`
+                return
+            }
+
+            data.forEach(a => {
+                const div = document.createElement("div")
+                div.className = "booking-item"
+
+                const date = new Date(a.marked_at).toLocaleDateString()
+
+                div.innerHTML = `
+            <div>
+                <div class="booking-title">${a.subject_code}</div>
+                <div class="booking-date">
+                    ${date} • Lecture ${a.lecture}
+                </div>
+            </div>
+
+            <div class="booking-status">
+                ✅ Present
+            </div>
+        `
+
+                container.appendChild(div)
+            })
+        }
+        document.getElementById("tab-att").addEventListener("change", () => {
+            loadSubjects()
+            loadAttendanceHistory()
+            loadAttendance()
+            loadAttendanceSummary()
+        })
+        socket.on("timetable:update", (data) => {
+
+            const mySection = localStorage.getItem("section")
+
+            // only update if same section
+            if (data.section === mySection) {
+                console.log("🔄 Updating timetable...")
+
+                loadTimetable()
+                showToast("Schedule updated ⚡")
+            }
+        })
+        async function loadAttendanceSummary() {
+
+            const student_id = localStorage.getItem("rollno") // ✅ FIXED
+            const section = localStorage.getItem("section")
+
+            const res = await fetch(`/attendance-summary?student_id=${student_id}&section=${section}`)
+            const data = await res.json()
+
+            const container = document.getElementById("attendanceSummary")
+            if (!container) return
+
+            container.innerHTML = ""
+
+            Object.keys(data || {}).forEach(sub => {
+
+                const s = data[sub]
+
+                const color = s.percentage >= 75 ? "#16a34a" : "#dc2626"
+
+                const div = document.createElement("div")
+                div.style = `
+            padding:12px;
+            margin-bottom:10px;
+            border-radius:10px;
+            background:#f9fafb;
+        `
+
+                div.innerHTML = `
+            <strong>${sub}</strong>
+            <div style="color:${color}">
+                ${s.percentage}% (${s.attended}/${s.total})
+            </div>
+        `
+
+                container.appendChild(div)
+            })
+        }
+        async function loadAttendance() {
+            const student_id = localStorage.getItem("rollno")
+            const section = localStorage.getItem("section")
+
+            const res = await fetch(`/attendance-summary?student_id=${student_id}&section=${section}`)
+            const data = await res.json()
+
+            console.log("ATT DATA:", data)
+
+            renderDaily(data.daily || [])
+            renderOverall(data.overall || {})
+        }
+        function renderDaily(data) {
+            const container = document.getElementById("dailyAttendance")
+            container.className = "att-grid"
+            container.innerHTML = ""
+
+            if (!data || !data.length) {
+                container.innerHTML = "<div></div>"
+                return
+            }
+
+            data.forEach(a => {
+                if (!a.subject_code) return
+                const subjectName = subjectMap[a.subject_code] || a.subject_code
+
+                const div = document.createElement("div")
+                div.className = "att-modern-card"
+
+                div.innerHTML = `
+            <div class="att-top">
+                <div class="att-icon">${a.subject_code[0]}</div>
+                <div>Lecture ${a.lecture}</div>
+            </div>
+
+            <div style="font-weight:600;">
+                ${a.subject_code}
+            </div>
+
+            <div style="font-size:12px; opacity:0.7;">
+                Present ✅
+            </div>
+        `
+
+                container.appendChild(div)
+            })
+        }
+        function renderOverall(data) {
+            const container = document.getElementById("attendanceContainer")
+            container.innerHTML = ""
+
+            Object.entries(data || {})
+                .filter(([subject]) => subject && subject !== "null")
+                .forEach(([subject, stats]) => {
+                    const subjectName = subjectMap[subject] || subject
+
+                    const percent = stats.total > 0
+                        ? Math.round((stats.attended / stats.total) * 100)
+                        : 0
+
+                    const div = document.createElement("div")
+                    div.className = "att-modern-card"
+
+                    div.innerHTML = `
+                <div class="att-top">
+                    <div class="att-icon">${subject[0]}</div>
+                    <div class="att-percent">${percent}%</div>
+                </div>
+
+                <div style="font-size:14px; font-weight:600;">
+                    ${subjectName}
+                </div>
+
+                <div style="font-size:12px; opacity:0.7;">
+                    ${stats.attended}/${stats.total} lectures
+                </div>
+
+                <div class="att-bar-bg">
+                    <div class="att-bar-fill" style="width:${percent}%"></div>
+                </div>
+            `
+
+                    container.appendChild(div)
+                })
+        }
+        async function loadSubjects() {
+            try {
+                const res = await fetch("/subjects") // API that returns all subjects
+                const data = await res.json()
+
+                subjectMap = {}
+
+                data.forEach(s => {
+                    subjectMap[s.subject_code] = s.subject_name
+                })
+
+                console.log("SUBJECT MAP:", subjectMap)
+
+            } catch (err) {
+                console.error("Subject load error:", err)
+            }
+        }
 
     </script>
 
