@@ -1664,6 +1664,96 @@
 
         loadBookings()
 
+        function startScannerUI() {
+            const el = document.getElementById("scannerWrapper")
+            el.classList.add("active")
+
+            setTimeout(() => {
+                startScanner()
+            }, 200) // wait for animation
+        }
+
+        function stopScannerUI() {
+            document.getElementById("scannerWrapper").classList.remove("active")
+            stopScanner()
+        }
+
+        let scanner = null
+
+        let zoomLevel = 1
+
+        function startScanner() {
+            if (scanner) return
+
+            scanned = false
+
+            scanner = new Html5Qrcode("reader")
+
+            scanner.start(
+                { facingMode: "environment" }, // ✅ ONLY ONE KEY
+                {
+                    fps: 10,
+                    qrbox: { width: 280, height: 280 }
+                },
+                successCallback
+            )
+
+            // enhance after start
+            setTimeout(() => {
+                if (scanner) {
+                    scanner.applyVideoConstraints({
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        advanced: [
+                            { focusMode: "continuous" },
+                            { exposureMode: "continuous" }
+                        ]
+                    })
+                }
+            }, 500)
+        }
+
+        function stopScanner() {
+            if (scanner) {
+                scanner.stop().then(() => {
+                    scanner.clear()
+                    scanner = null
+                })
+            }
+        }
+
+
+
+
+
+
+        function zoomIn() {
+            zoomLevel += 1
+            document.getElementById("reader").style.transform = `scale(${zoomLevel})`
+        }
+
+        function zoomOut() {
+            zoomLevel -= 0.7
+            document.getElementById("reader").style.transform = `scale(${zoomLevel})`
+        }
+
+        function changeZoom(amount) {
+            zoomLevel = Math.min(2, Math.max(1, zoomLevel + amount))
+            document.getElementById("zoomSlider").value = zoomLevel
+            applyZoom()
+        }
+
+        document.getElementById("zoomSlider").addEventListener("input", e => {
+            zoomLevel = parseFloat(e.target.value)
+            applyZoom()
+        })
+
+        function applyZoom() {
+            const video = document.querySelector("#reader video")
+            if (video) {
+                video.style.transform = `scale(${zoomLevel})`
+            }
+        }
 
 
 
