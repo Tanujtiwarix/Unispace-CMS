@@ -1288,6 +1288,40 @@
 
         loadFacultyTimetable()
 
+        async function generateQR() {
+            const res = await fetch(
+                `/generate-attendance-token?subject_code=${currentLectureData.subject_code}&lecture=${currentLectureData.lecture}`
+            )
+
+            const data = await res.json()
+
+            currentToken = data.token
+
+            new QRious({
+                element: document.getElementById('qrCanvas'),
+                value: currentToken,
+                size: 220
+            })
+        }
+
+        let qrInterval
+
+        function startQRLoop() {
+            generateQR()
+
+            qrInterval = setInterval(() => {
+                generateQR()
+            }, 2000) // every 5 sec
+        }
+
+        let currentToken = null
+        let currentLectureData = {}
+
+        function closeQR() {
+            document.getElementById("qrModal").style.display = "none"
+            clearInterval(qrInterval)
+        }
+
         
 
         async function startAttendance(day, lectureNumber) {
