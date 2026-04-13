@@ -10,7 +10,780 @@
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
     <style>
-        
+        /* EXACT CSS STYLING FROM STUDENT PORTAL */
+        :root {
+            --primary: #2563eb;
+            --navy: #1e3a8a;
+            --bg: #f8fafc;
+            --border: #e2e8f0;
+            --green: #22c55e;
+            --pink: #db2777;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background: var(--bg);
+            color: #334155;
+            height: 100vh;
+            overflow-x: hidden;
+        }
+
+        button {
+            touch-action: manipulation;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Navigation Logic - FIXED MAPPING */
+        input[type="radio"] {
+            display: none;
+        }
+
+        .page-section {
+            display: none;
+        }
+
+        #tab-dash:checked~.main-content #view-dashboard,
+        #tab-att:checked~.main-content #view-attendance,
+        #tab-ann:checked~.main-content #view-announcements,
+        #tab-rooms:checked~.main-content #view-booking,
+        #tab-time:checked~.main-content #view-timetable {
+            display: block;
+        }
+
+        /* Sidebar Styling */
+        .sidebar {
+            width: 260px;
+            background: #fff;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .brand {
+            padding: 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-box {
+            background: var(--primary);
+            color: #fff;
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 20px;
+        }
+
+        .brand-info strong {
+            display: block;
+            font-size: 18px;
+            color: #1e293b;
+        }
+
+        .brand-info span {
+            font-size: 11px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .nav-menu {
+            flex: 1;
+            padding: 10px;
+        }
+
+        .nav-item {
+            padding: 12px 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #475569;
+            font-weight: 500;
+            margin-bottom: 5px;
+            transition: 0.2s;
+        }
+
+        .nav-item:hover {
+            background: #f1f5f9;
+            color: var(--primary);
+        }
+
+        /* Active State Highlights */
+        #tab-dash:checked~.sidebar .nav-dash,
+        #tab-att:checked~.sidebar .nav-att,
+        #tab-ann:checked~.sidebar .nav-ann,
+        #tab-rooms:checked~.sidebar .nav-rooms,
+        #tab-time:checked~.sidebar .nav-time {
+            background: #f1f5f9;
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        /* FIXED PROFESSOR PILL STYLING */
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .user-pill {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f8fafc;
+            padding: 10px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .user-img {
+            width: 35px;
+            height: 35px;
+            background: #cbd5e1;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .user-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: #1e293b;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-role {
+            font-size: 10px;
+            color: #64748b;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+        }
+
+        .page-header h1 {
+            color: var(--primary);
+            font-size: 32px;
+            margin-bottom: 5px;
+        }
+
+        .header-subtext {
+            color: #64748b;
+            font-size: 14px;
+            margin-bottom: 30px;
+            font-weight: 500;
+        }
+
+        /* Cards & Grids */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1.6fr 1.2fr;
+            gap: 25px;
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            font-weight: 700;
+            color: var(--navy);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+        }
+
+        .stat-box {
+            background: #eff6ff;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            border: 1px solid #dbeafe;
+        }
+
+        .stat-val {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .btn-action {
+            width: 100%;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 10px;
+            transition: 0.3s;
+        }
+
+        .btn-action:hover {
+            background: var(--navy);
+        }
+
+        .textarea-input {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 15px;
+            outline: none;
+            margin-bottom: 10px;
+            resize: none;
+            font-family: inherit;
+        }
+
+        /* Attendance Table styling */
+        .att-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .att-row:last-child {
+            border: none;
+        }
+
+
+        /*  */
+
+        /* 🟦 TODAY GRID */
+        .today-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+        }
+
+        /* 💎 CARD */
+        .today-card {
+            background: #ecfdf5;
+            border: 2px solid #bbf7d0;
+            border-radius: 16px;
+            padding: 16px;
+            text-align: center;
+            transition: 0.25s;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        /* 🔵 HAS CLASS */
+        .has-class {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            border: none;
+            color: white;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+        }
+
+        /* 🟨 CURRENT */
+        .current-card {
+            border: 2px solid #facc15;
+            background: #fef9c3;
+        }
+
+        .current-card .today-time {
+            border: 2px solid #facc15;
+            background: #a69a10;
+        }
+
+
+
+
+
+        /* 📚 SUBJECT */
+        .today-subject {
+            font-size: 15px;
+            font-weight: 700;
+            color: #065f46;
+        }
+
+        /* 👨‍🏫 SECTION */
+        .today-teacher {
+            font-size: 12px;
+            color: #047857;
+        }
+
+        /* ⏰ TIME */
+        .today-time {
+            font-size: 11px;
+            background: #bbf7d0;
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        /* 🔥 WHEN ACTIVE */
+        .has-class .today-subject {
+            color: rgb(27, 26, 26);
+        }
+
+        .has-class .today-teacher {
+            color: rgba(23, 22, 22, 0.85);
+        }
+
+        .has-class .today-time {
+            background: rgba(255, 255, 255, 0.2);
+            color: rgb(16, 16, 16);
+        }
+
+        /*  */
+        /* 🌍 WEEK GRID */
+        .weekly-wrapper {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        /* 📦 DAY CARD */
+        .day-card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 12px;
+            border: 2px solid #33a4f0;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+        }
+
+        /* 🏷 DAY HEADER */
+        .day-header {
+            text-align: center;
+            font-weight: 700;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        /* 📚 BODY */
+        .day-body {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+        }
+
+        /* 🎴 CLASS BLOCK */
+        .class-item {
+            border-radius: 12px;
+            padding: 6px;
+            text-align: center;
+            font-size: 10px;
+        }
+
+        /* 🔵 BUSY */
+        .class-item.busy {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+        }
+
+        /* 🟢 FREE */
+        .class-item.free {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+        }
+
+        /* 📖 SUBJECT */
+        .class-subject {
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        /* 👨‍🏫 SECTION */
+        .class-teacher {
+            font-size: 9px;
+            opacity: 0.85;
+        }
+
+        /* 🏫 ROOM */
+        .class-time {
+            font-size: 9px;
+            opacity: 0.75;
+        }
+
+        .today-card:hover,
+        .class-item:hover {
+            transform: translateY(-3px);
+        }
+
+        #liveList {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .student-card {
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            animation: pop 0.3s ease;
+        }
+
+        @keyframes pop {
+            from {
+                transform: scale(0.9);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        #liveCount {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #2563eb;
+        }
+
+        .refresh-btn {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        /* 🔷 ROOM GRID */
+        .room-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        /* 💎 ROOM CARD */
+        .room-card {
+            border: 1px solid #dcfce7;
+            background: #fff;
+            padding: 20px;
+            border-radius: 16px;
+            border-top: 5px solid var(--green);
+            transition: 0.25s;
+        }
+
+        .room-card:hover {
+            transform: translateY(-5px);
+        }
+
+        /* 🔘 BUTTON (same as student) */
+        .btn-book {
+            width: 100%;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            margin-top: 15px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+
+        .btn-book:hover {
+            background: var(--navy);
+        }
+
+        /* 🌫 MODAL BACKDROP */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+        }
+
+        /* 📦 MODAL CARD */
+        .modal-card {
+            background: #fff;
+            width: 420px;
+            border-radius: 18px;
+            padding: 25px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+            animation: fadeIn 0.25s ease;
+        }
+
+        /* HEADER */
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 18px;
+            color: var(--navy);
+        }
+
+        .close-btn {
+            cursor: pointer;
+            font-size: 20px;
+            color: #05295c;
+        }
+
+        /* SUBTEXT */
+        .modal-sub {
+            font-size: 12px;
+            color: #64748b;
+            margin: 10px 0 20px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .form-grid .full {
+            grid-column: span 2;
+        }
+
+        .form-grid label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .form-grid input,
+        .form-grid select,
+        .form-grid textarea {
+            width: 100%;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            margin-top: 5px;
+            font-size: 13px;
+        }
+
+        textarea {
+            resize: none;
+            height: 70px;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-cancel {
+            background: #334155;
+            color: white;
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-submit {
+            background: var(--primary);
+            color: white;
+            padding: 10px 16px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-submit:hover {
+            background: var(--navy);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+
+            .room-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-card {
+                width: 95%;
+                border-radius: 14px;
+            }
+
+            .btn-book,
+            .btn-submit {
+                width: 100%;
+                padding: 14px;
+                font-size: 16px;
+            }
+        }
+
+        .qr-close-btn {
+            margin-top: 15px;
+            padding: 10px 18px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .qr-close-btn:hover {
+            background: #dc2626;
+            transform: scale(1.05);
+        }
+
+        .btn-cancel {
+            margin-top: 10px;
+            width: 100%;
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .btn-cancel:hover {
+            background: #dc2626;
+        }
+
+        .cancelled-slot {
+            background: #e5e7eb !important;
+            opacity: 0.7;
+            pointer-events: none;
+            /* 🔥 disables clicks */
+        }
+
+        /* 🔥 FULL MOBILE FIX (COPIED FROM STUDENT UI) */
+        @media (max-width: 768px) {
+
+            body {
+                overflow: auto;
+            }
+
+            .app-container {
+                flex-direction: column;
+            }
+
+            /* 🔥 Sidebar → Top scroll nav */
+            .sidebar {
+                width: 100%;
+                height: auto;
+                flex-direction: row;
+                overflow-x: auto;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .nav-menu {
+                display: flex;
+                gap: 10px;
+                padding: 10px;
+            }
+
+            .nav-item {
+                white-space: nowrap;
+                padding: 10px;
+                font-size: 13px;
+            }
+
+            .main-content {
+                padding: 15px;
+            }
+
+            /* 🔥 GRID FIX */
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .today-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .weekly-wrapper {
+                grid-template-columns: 1fr;
+            }
+
+            .room-grid {
+                grid-template-columns: 1fr;
+            }
+
+            /* 🔥 BUTTONS TOUCH FRIENDLY */
+            .btn-action,
+            .btn-book,
+            .btn-submit {
+                width: 100%;
+                padding: 14px;
+                font-size: 16px;
+            }
+
+            /* 🔥 MODAL FULL WIDTH */
+            .modal-card {
+                width: 95%;
+                border-radius: 14px;
+            }
+        }
+
+        /* 🔥 EXTRA SMALL DEVICES */
+        @media (max-width: 480px) {
+            .today-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .card {
+                padding: 16px;
+            }
+
+            .page-header h1 {
+                font-size: 22px;
+            }
+        }
     </style>
 </head>
 
